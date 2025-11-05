@@ -1,6 +1,5 @@
 mod ast;
 mod blueprint;
-mod import;
 mod non_fungible_data;
 mod utils;
 
@@ -8,7 +7,7 @@ use proc_macro::TokenStream;
 
 /// Declares a blueprint.
 ///
-/// The `blueprint!` macro is a convenient way to define a new blueprint. It takes
+/// The `blueprint` macro is a convenient way to define a new blueprint. It takes
 /// two arguments:
 /// - A `struct` which defines the structure
 /// - A `impl` which defines the implementation.
@@ -20,7 +19,8 @@ use proc_macro::TokenStream;
 /// ```ignore
 /// use scrypto::prelude::*;
 ///
-/// blueprint! {
+/// #[blueprint]
+/// mod counter {
 ///     struct Counter {
 ///         count: u32
 ///     }
@@ -40,60 +40,9 @@ use proc_macro::TokenStream;
 ///     }
 /// }
 /// ```
-#[proc_macro]
-pub fn blueprint(input: TokenStream) -> TokenStream {
+#[proc_macro_attribute]
+pub fn blueprint(_: TokenStream, input: TokenStream) -> TokenStream {
     blueprint::handle_blueprint(proc_macro2::TokenStream::from(input))
-        .unwrap_or_else(|err| err.to_compile_error())
-        .into()
-}
-
-/// Imports a blueprint from its ABI.
-///
-/// This macro will generate stubs for accessing the blueprint according to
-/// its ABI specification.
-///
-/// # Example
-/// ```ignore
-/// use scrypto::prelude::*;
-///
-/// import! {
-/// r#"
-/// {
-///     "package_address": "01a405d3129b61e86c51c3168d553d2ffd7a3f0bd2f66b5a3e9876",
-///     "blueprint_name": "GumballMachine",
-///     "functions": [
-///         {
-///             "name": "new",
-///             "inputs": [],
-///             "output": {
-///                 "type": "Custom",
-///                 "name": "ComponentAddress"
-///             }
-///         }
-///     ],
-///     "methods": [
-///         {
-///             "name": "get_gumball",
-///             "mutability": "Mutable",
-///             "inputs": [
-///                 {
-///                     "type": "Custom",
-///                     "name": "Bucket"
-///                 }
-///             ],
-///             "output": {
-///                 "type": "Custom",
-///                 "name": "Bucket"
-///             }
-///         }
-///     ]
-/// }
-/// "#
-/// }
-/// ```
-#[proc_macro]
-pub fn import(input: TokenStream) -> TokenStream {
-    import::handle_import(proc_macro2::TokenStream::from(input))
         .unwrap_or_else(|err| err.to_compile_error())
         .into()
 }
@@ -108,11 +57,11 @@ pub fn import(input: TokenStream) -> TokenStream {
 /// #[derive(NonFungibleData)]
 /// pub struct MyStruct {
 ///     pub field_1: u32,
-///     #[scrypto(mutable)]
+///     #[mutable]
 ///     pub field_2: String,
 /// }
 /// ```
-#[proc_macro_derive(NonFungibleData, attributes(scrypto))]
+#[proc_macro_derive(NonFungibleData, attributes(mutable))]
 pub fn non_fungible_data(input: TokenStream) -> TokenStream {
     non_fungible_data::handle_non_fungible_data(proc_macro2::TokenStream::from(input))
         .unwrap_or_else(|err| err.to_compile_error())

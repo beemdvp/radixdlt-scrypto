@@ -1,8 +1,9 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use std::collections::BTreeMap;
+use syn::punctuated::Punctuated;
+use syn::token::Comma;
 use syn::*;
-
-use crate::utils::is_mutable;
 
 macro_rules! trace {
     ($($arg:expr),*) => {{
@@ -11,121 +12,73 @@ macro_rules! trace {
     }};
 }
 
+pub fn extract_attributes(
+    attrs: &[Attribute],
+    name: &str,
+) -> Option<BTreeMap<String, Option<String>>> {
+    for attr in attrs {
+        if !attr.path.is_ident(name) {
+            continue;
+        }
+
+        let mut fields = BTreeMap::new();
+        if let Ok(meta) = attr.parse_meta() {
+            if let Meta::List(MetaList { nested, .. }) = meta {
+                nested.into_iter().for_each(|m| match m {
+                    NestedMeta::Meta(m) => match m {
+                        Meta::NameValue(name_value) => {
+                            if let Some(ident) = name_value.path.get_ident() {
+                                if let Lit::Str(s) = name_value.lit {
+                                    fields.insert(ident.to_string(), Some(s.value()));
+                                }
+                            }
+                        }
+                        Meta::Path(path) => {
+                            if let Some(ident) = path.get_ident() {
+                                fields.insert(ident.to_string(), None);
+                            }
+                        }
+                        _ => {}
+                    },
+                    _ => {}
+                })
+            }
+        }
+        return Some(fields);
+    }
+
+    None
+}
+
+pub fn is_mutable(f: &Field) -> bool {
+    extract_attributes(&f.attrs, "mutable").is_some()
+}
+
 pub fn handle_non_fungible_data(input: TokenStream) -> Result<TokenStream> {
     trace!("handle_non_fungible_data() starts");
 
-    let DeriveInput { ident, data, .. } = parse2(input)?;
-    let ident_str = ident.to_string();
-    trace!("Processing: {}", ident_str);
+    let DeriveInput {
+        ident,
+        data,
+        generics,
+        ..
+    } = parse2(input)?;
+    trace!("Processing: {}", ident.to_string());
+
+    let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
     let output = match data {
         Data::Struct(s) => match s.fields {
             syn::Fields::Named(FieldsNamed { named, .. }) => {
-                // immutable
-                let im: Vec<&Field> = named.iter().filter(|f| !is_mutable(f)).collect();
-                let im_n = Index::from(im.len());
-                let im_ids = im.iter().map(|f| &f.ident);
-                let im_ids2 = im_ids.clone();
-                let im_types = im.iter().map(|f| &f.ty);
-                let im_types2 = im_types.clone();
-                let im_names = im
+                let mutable_fields: Punctuated<String, Comma> = named
                     .iter()
-                    .map(|f| f.ident.clone().expect("Illegal State!").to_string());
-                // mutable
-                let m: Vec<&Field> = named.iter().filter(|f| is_mutable(f)).collect();
-                let m_n = Index::from(m.len());
-                let m_ids = m.iter().map(|f| &f.ident);
-                let m_ids2 = m_ids.clone();
-                let m_types = m.iter().map(|f| &f.ty);
-                let m_types2 = m_types.clone();
-                let m_names = m
-                    .iter()
-                    .map(|f| f.ident.clone().expect("Illegal State!").to_string());
+                    .filter(|f| is_mutable(f))
+                    .filter_map(|f| f.ident.as_ref().map(|f| f.to_string()))
+                    .collect();
 
                 quote! {
-                    impl radix_engine_interface::model::NonFungibleData for #ident {
-                        fn decode(immutable_data: &[u8], mutable_data: &[u8]) -> Result<Self, ::sbor::DecodeError> {
-                            use ::sbor::{type_id::*, *};
-                            use ::scrypto::data::*;
-                            let mut decoder_nm = ScryptoDecoder::new(immutable_data);
-                            decoder_nm.read_and_check_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                            decoder_nm.read_and_check_type_id(ScryptoSborTypeId::Tuple)?;
-                            decoder_nm.read_and_check_size(#im_n)?;
-
-                            let mut decoder_m = ScryptoDecoder::new(mutable_data);
-                            decoder_m.read_and_check_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                            decoder_m.read_and_check_type_id(ScryptoSborTypeId::Tuple)?;
-                            decoder_m.read_and_check_size(#m_n)?;
-
-                            let decoded = Self {
-                                #(#im_ids: decoder_nm.decode::<#im_types>()?,)*
-                                #(#m_ids: decoder_m.decode::<#m_types>()?,)*
-                            };
-
-                            decoder_nm.check_end()?;
-                            decoder_m.check_end()?;
-
-                            Ok(decoded)
-                        }
-
-                        fn immutable_data(&self) -> Result<::sbor::rust::vec::Vec<u8>, ::sbor::EncodeError> {
-                            use ::sbor::{type_id::*, *};
-                            use ::scrypto::data::*;
-
-                            let mut bytes = Vec::with_capacity(512);
-                            let mut encoder = ScryptoEncoder::new(&mut bytes);
-                            encoder.write_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                            encoder.write_type_id(ScryptoSborTypeId::Tuple)?;
-                            encoder.write_size(#im_n)?;
-                            #(
-                                encoder.encode(&self.#im_ids2)?;
-                            )*
-
-                            Ok(bytes)
-                        }
-
-                        fn mutable_data(&self) -> Result<::sbor::rust::vec::Vec<u8>, ::sbor::EncodeError> {
-                            use ::sbor::{type_id::*, *};
-                            use ::sbor::rust::vec::Vec;
-                            use ::scrypto::data::*;
-
-                            let mut bytes = Vec::with_capacity(512);
-                            let mut encoder = ScryptoEncoder::new(&mut bytes);
-                            encoder.write_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                            encoder.write_type_id(ScryptoSborTypeId::Tuple)?;
-                            encoder.write_size(#m_n)?;
-                            #(
-                                encoder.encode(&self.#m_ids2)?;
-                            )*
-
-                            Ok(bytes)
-                        }
-
-                        fn immutable_data_schema() -> ::scrypto::abi::Type {
-                            use ::sbor::rust::borrow::ToOwned;
-                            use ::sbor::rust::vec;
-                            use ::scrypto::abi::Describe;
-
-                            ::scrypto::abi::Type::Struct {
-                                name: #ident_str.to_owned(),
-                                fields: ::scrypto::abi::Fields::Named {
-                                    named: vec![#((#im_names.to_owned(), <#im_types2>::describe())),*]
-                                },
-                            }
-                        }
-
-                        fn mutable_data_schema() -> ::scrypto::abi::Type {
-                            use ::sbor::rust::borrow::ToOwned;
-                            use ::sbor::rust::vec;
-                            use ::scrypto::abi::Describe;
-
-                            ::scrypto::abi::Type::Struct {
-                                name: #ident_str.to_owned(),
-                                fields: ::scrypto::abi::Fields::Named {
-                                    named: vec![#((#m_names.to_owned(), <#m_types2>::describe())),*]
-                                },
-                            }
-                        }
+                    impl #impl_generics ::scrypto::prelude::NonFungibleData for #ident #type_generics #where_clause {
+                        const MUTABLE_FIELDS: &'static [&'static str] = &[#mutable_fields];
                     }
                 }
             }
@@ -171,7 +124,7 @@ mod tests {
     #[test]
     fn test_non_fungible() {
         let input = TokenStream::from_str(
-            "pub struct MyStruct { pub field_1: u32, #[scrypto(mutable)] pub field_2: String, }",
+            "pub struct MyStruct { pub field_1: u32, #[mutable] pub field_2: String, }",
         )
         .unwrap();
         let output = handle_non_fungible_data(input).unwrap();
@@ -179,71 +132,26 @@ mod tests {
         assert_code_eq(
             output,
             quote! {
-                impl radix_engine_interface::model::NonFungibleData for MyStruct {
-                    fn decode(immutable_data: &[u8], mutable_data: &[u8]) -> Result<Self, ::sbor::DecodeError> {
-                        use ::sbor::{type_id::*, *};
-                        use ::scrypto::data::*;
-                        let mut decoder_nm = ScryptoDecoder::new(immutable_data);
-                        decoder_nm.read_and_check_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                        decoder_nm.read_and_check_type_id(ScryptoSborTypeId::Tuple)?;
-                        decoder_nm.read_and_check_size(1)?;
-                        let mut decoder_m = ScryptoDecoder::new(mutable_data);
-                        decoder_m.read_and_check_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                        decoder_m.read_and_check_type_id(ScryptoSborTypeId::Tuple)?;
-                        decoder_m.read_and_check_size(1)?;
-                        let decoded = Self {
-                            field_1: decoder_nm.decode::<u32>()?,
-                            field_2: decoder_m.decode::<String>()?,
-                        };
-                        decoder_nm.check_end()?;
-                        decoder_m.check_end()?;
-                        Ok(decoded)
-                    }
-                    fn immutable_data(&self) -> Result<::sbor::rust::vec::Vec<u8>, ::sbor::EncodeError> {
-                        use ::sbor::{type_id::*, *};
-                        use ::scrypto::data::*;
-                        let mut bytes = Vec::with_capacity(512);
-                        let mut encoder = ScryptoEncoder::new(&mut bytes);
-                        encoder.write_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                        encoder.write_type_id(ScryptoSborTypeId::Tuple)?;
-                        encoder.write_size(1)?;
-                        encoder.encode(&self.field_1)?;
-                        Ok(bytes)
-                    }
-                    fn mutable_data(&self) -> Result<::sbor::rust::vec::Vec<u8>, ::sbor::EncodeError> {
-                        use ::sbor::{type_id::*, *};
-                        use ::sbor::rust::vec::Vec;
-                        use ::scrypto::data::*;
-                        let mut bytes = Vec::with_capacity(512);
-                        let mut encoder = ScryptoEncoder::new(&mut bytes);
-                        encoder.write_payload_prefix(SCRYPTO_SBOR_V1_PAYLOAD_PREFIX)?;
-                        encoder.write_type_id(ScryptoSborTypeId::Tuple)?;
-                        encoder.write_size(1)?;
-                        encoder.encode(&self.field_2)?;
-                        Ok(bytes)
-                    }
-                    fn immutable_data_schema() -> ::scrypto::abi::Type {
-                        use ::sbor::rust::borrow::ToOwned;
-                        use ::sbor::rust::vec;
-                        use ::scrypto::abi::Describe;
-                        ::scrypto::abi::Type::Struct {
-                            name: "MyStruct".to_owned(),
-                            fields: ::scrypto::abi::Fields::Named {
-                                named: vec![("field_1".to_owned(), <u32>::describe())]
-                            },
-                        }
-                    }
-                    fn mutable_data_schema() -> ::scrypto::abi::Type {
-                        use ::sbor::rust::borrow::ToOwned;
-                        use ::sbor::rust::vec;
-                        use ::scrypto::abi::Describe;
-                        ::scrypto::abi::Type::Struct {
-                            name: "MyStruct".to_owned(),
-                            fields: ::scrypto::abi::Fields::Named {
-                                named: vec![("field_2".to_owned(), <String>::describe())]
-                            },
-                        }
-                    }
+                impl ::scrypto::prelude::NonFungibleData for MyStruct {
+                    const MUTABLE_FIELDS : & 'static [& 'static str] = & ["field_2"] ;
+                }
+            },
+        );
+    }
+
+    #[test]
+    fn test_non_fungible_with_generic_parameter() {
+        let input = TokenStream::from_str(
+            "pub struct MyStruct<A> { pub field_1: u32, #[mutable] pub field_2: A, }",
+        )
+        .unwrap();
+        let output = handle_non_fungible_data(input).unwrap();
+
+        assert_code_eq(
+            output,
+            quote! {
+                impl<A> ::scrypto::prelude::NonFungibleData for MyStruct<A> {
+                    const MUTABLE_FIELDS : & 'static [& 'static str] = & ["field_2"] ;
                 }
             },
         );

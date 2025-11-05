@@ -1,23 +1,30 @@
 [package]
 name = "scrypto-derive"
-version = "0.8.0"
+version = "1.3.0"
 edition = "2021"
+description = "A collection of macros for writing Scrypto blueprints, from the Radix DLT project."
+readme = "README.md"
+license-file = "../LICENSE"
+repository = "https://github.com/radixdlt/radixdlt-scrypto"
 
 [lib]
 proc-macro = true
+bench = false
 
 [dependencies]
-proc-macro2 = { version = "1.0.38" }
-syn = { version = "1.0.93", features = ["full", "extra-traits"] }
-quote = { version = "1.0.18" }
-serde = { version = "1.0.137", default-features = false }
-serde_json = { version = "1.0.81", default-features = false }
-sbor = { path = "../sbor", default-features = false }
-scrypto-abi = { path = "../scrypto-abi", default-features = false }
+radix-blueprint-schema-init = { workspace = true }
+sbor = { workspace = true }
+radix-common = { workspace = true }
+proc-macro2 = { workspace = true }
+syn = { workspace = true, features = ["full", "extra-traits"] }
+quote = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+regex = { workspace = true, features = [] }
 
 [features]
-# Currenlty, dependencies of procedrual macros are imported to host crates. This may accidentally 
-# enable unwanted features of host dependencies, i.e. `serde`, `serde_json`, `sbor` and `scrypto-abi`.
+# Currently, dependencies of procedural macros are imported to host crates. This may accidentally 
+# enable unwanted features of host dependencies, i.e. `serde`, `serde_json`, `sbor` and `radix-blueprint-schema-init`.
 # 
 # To work around with it, we've added features `std` and `alloc` for `scrypto-derive`, even
 # though it only works under `std` environment.
@@ -27,19 +34,11 @@ scrypto-abi = { path = "../scrypto-abi", default-features = false }
 # - https://github.com/rust-lang/cargo/issues/7915
 #
 default = ["std"]
-std = [
-    "serde/std", "serde_json/std", 
-    "sbor/std", "sbor/serde", 
-    "scrypto-abi/std", "scrypto-abi/serde"
-]
-alloc = [
-    "serde/alloc", "serde_json/alloc", 
-    "sbor/alloc", "sbor/serde", 
-    "scrypto-abi/alloc", "scrypto-abi/serde"
-]
+std = ["serde/std", "serde_json/std", "radix-blueprint-schema-init/std", "radix-common/std", "radix-blueprint-schema-init/serde", "sbor/std"]
+alloc = ["serde/alloc", "serde_json/alloc", "radix-blueprint-schema-init/alloc", "radix-common/alloc", "radix-blueprint-schema-init/serde", "sbor/alloc"]
 
 # Enable trace
 trace = []
 
-# Disable ABI gen in the output WASM.
-no-abi-gen = []
+# Disable schema gen in the output WASM.
+no-schema = []

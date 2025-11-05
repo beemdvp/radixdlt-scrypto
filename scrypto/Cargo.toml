@@ -1,40 +1,49 @@
 [package]
 name = "scrypto"
-version = "0.8.0"
+version = "1.3.0"
 edition = "2021"
+description = "The Scrypto standard library, from the Radix DLT project."
+readme = "README.md"
+license-file = "../LICENSE"
+repository = "https://github.com/radixdlt/radixdlt-scrypto"
 
 [dependencies]
-sha2 = { version = "0.10.2", default-features = false }
-sha3 = { version = "0.10.1", default-features = false }
-hex = { version = "0.4.3", default-features = false }
-num-traits = { version = "0.2.15", default-features = false }
-num-bigint = { version = "0.4.3", default-features = false }
-bech32 = { version = "0.9.0", default-features = false }
-radix-engine-interface = { path = "../radix-engine-interface", default-features = false }
-radix-engine-derive = { path = "../radix-engine-derive", default-features = false }
-sbor = { path = "../sbor", default-features = false }
-scrypto-abi = { path = "../scrypto-abi", default-features = false }
-scrypto-derive = { path = "../scrypto-derive", default-features = false }
-utils = { path = "../utils", default-features = false }
-paste = { version = "1.0.7"}
-serde = { version = "1.0.144", default-features = false, optional = true }
-strum = { version = "0.24", default-features = false, features = ["derive"] }
+radix-common = { workspace = true }
+radix-engine-interface = { workspace = true }
+sbor = { workspace = true }
+radix-blueprint-schema-init = { workspace = true }
+scrypto-derive = { workspace = true }
+radix-rust = { workspace = true }
+hex = { workspace = true }
+num-traits = { workspace = true }
+num-bigint = { workspace = true }
+bech32 = { workspace = true }
+paste = { workspace = true }
+serde = { workspace = true, optional = true }
+strum = { workspace = true, features = ["derive"] }
+const-sha1 = { workspace = true, default-features = false } # Chosen because of its small size and 0 transitive dependencies
+minicov = { workspace = true, optional = true }
 
 [features]
 # You should enable either `std` or `alloc`
-default = ["std", "prelude"]
-std = ["hex/std", "sbor/std", "scrypto-abi/std", "scrypto-derive/std", "strum/std", "radix-engine-interface/std", "radix-engine-derive/std", "utils/std"]
-alloc = ["hex/alloc", "sbor/alloc", "scrypto-abi/alloc", "scrypto-derive/alloc", "radix-engine-interface/alloc", "radix-engine-derive/alloc", "utils/alloc"]
+default = ["std"]
+std = ["hex/std", "sbor/std", "radix-blueprint-schema-init/std", "scrypto-derive/std", "strum/std", "radix-common/std", "radix-engine-interface/std", "radix-rust/std"]
+alloc = ["hex/alloc", "sbor/alloc", "radix-blueprint-schema-init/alloc", "scrypto-derive/alloc", "radix-common/alloc", "radix-engine-interface/alloc", "radix-rust/alloc"]
 
 # Turn on this feature to enable tracing.
 trace = ["scrypto-derive/trace"]
 
-# Enable serde derives
-serde = ["sbor/serde", "scrypto-abi/serde", "serde/derive", "radix-engine-interface/serde"]
+# Disable schema gen in the output WASM.
+no-schema = ["scrypto-derive/no-schema"]
 
-# Enable prelude.
-# Note that prelude introduces duplicated symbols which may confuse rustc suggestions.
-prelude = []
+log-error = []
+log-warn = []
+log-info = []
+log-debug = []
+log-trace = []
 
-# Disable ABI gen in the output WASM.
-no-abi-gen = ["scrypto-derive/no-abi-gen"]
+# Feature to generate code coverage for WASM
+coverage = ["minicov"]
+
+[lib]
+bench = false

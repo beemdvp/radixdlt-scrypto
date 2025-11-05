@@ -1,32 +1,43 @@
 #!/bin/bash
 
-set -Ee
+set -eE
 
 err_report() {
-    echo "Code format check FAILED on line $1"
+    echo "Something went wrong on line $1"
 }
+
+quiet_flag=""
+
+if [ "$1" = "--quiet" ]
+  then quiet_flag="--quiet"
+fi
 
 trap 'err_report $LINENO' ERR
 
+failed=0
+lf=$'\n'
+
 cd "$(dirname "$0")"
 
-(cd sbor; cargo fmt --check --quiet)
-(cd sbor-derive; cargo fmt --check --quiet)
-(cd sbor-tests; cargo fmt --check --quiet)
-(cd scrypto; cargo fmt --check --quiet)
-(cd scrypto-abi; cargo fmt --check --quiet)
-(cd scrypto-derive; cargo fmt --check --quiet)
-(cd scrypto-tests; cargo fmt --check --quiet)
-(cd scrypto-unit; cargo fmt --check --quiet)
-(cd radix-engine; cargo fmt --check --quiet)
-(cd radix-engine-interface; cargo fmt --check --quiet)
-(cd radix-engine-stores; cargo fmt --check --quiet)
-(cd simulator; cargo fmt --check --quiet)
-(cd transaction; cargo fmt --check --quiet)
+# We use the cd trick to avoid issues like this: https://github.com/rust-lang/rustfmt/issues/4432
 
-(cd assets/blueprints/account; scrypto fmt --check --quiet)
-(cd assets/blueprints/faucet; scrypto fmt --check --quiet)
-(cd examples; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' scrypto fmt --path {} --check --quiet)
-(cd radix-engine/tests/blueprints; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' scrypto fmt --path {} --check --quiet)
+# This should align with format.sh, build.sh, test.sh, clean.sh, update-cargo-locks-minimally.sh
+# ... and at some point, we should replace all these with a shared
+#     workspace lister function which returns this list stripped of Cargo.tomls
+#     and can be used by all these scripts to save duplication.
+packages="Cargo.toml$lf"
+packages+="radix-engine-tests/assets/blueprints/Cargo.toml$lf"
+packages+="radix-clis/tests/blueprints/Cargo.toml$lf"
+packages+="scrypto-test/tests/blueprints/Cargo.toml$lf"
+packages+="scrypto-test/assets/blueprints/Cargo.toml$lf"
+packages+="scrypto-compiler/tests/assets/scenario_1/Cargo.toml$lf"
+packages+="scrypto-compiler/tests/assets/scenario_2/Cargo.toml$lf"
+packages+="$(find examples -mindepth 2 -maxdepth 2 -type f \( -name Cargo.toml \))$lf"
 
-echo "Code format check passed!"
+for package in $packages; do
+    folder=$(dirname $package)
+    (cd $folder; cargo check $quiet_flag) || { echo "$lf>> Code compile check FAILED for $package$lf"; failed=1; }
+done
+
+[ $failed -eq 0 ] && echo "Code compile check passed!"
+exit $failed

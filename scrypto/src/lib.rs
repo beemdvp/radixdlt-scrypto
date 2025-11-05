@@ -16,85 +16,94 @@ compile_error!("Either feature `std` or `alloc` must be enabled for this crate."
 #[cfg(all(feature = "std", feature = "alloc"))]
 compile_error!("Feature `std` and `alloc` can't be enabled at the same time.");
 
-/// Scrypto blueprint ABI.
-pub mod abi {
-    pub use scrypto_abi::*;
-}
-/// Scrypto buffer for wasm-engine data exchange.
-pub mod buffer;
 /// Scrypto component abstraction.
 pub mod component;
-/// Scrypto runtime abstraction.
-pub mod runtime;
-/// Scrypto data model.
-pub mod data {
-    pub use radix_engine_interface::data::*;
-}
-/// Scrypto math library.
-pub mod math {
-    pub use radix_engine_interface::math::*;
-}
-/// Scrypto RE node model.
-pub mod model {
-    pub use radix_engine_interface::model::*;
-}
-pub mod crypto {
-    pub use radix_engine_interface::crypto::*;
-}
-/// Scrypto RE abstraction.
+/// Scrypto crypto utilities abstraction.
+pub mod crypto_utils;
+/// Scrypto engine abstraction.
 pub mod engine;
+/// Scrypto module abstraction.
+pub mod modules;
+/// Scrypto preludes.
+pub mod prelude;
 /// Scrypto resource abstraction.
 pub mod resource;
-
-/// Scrypto preludes.
-#[cfg(feature = "prelude")]
-pub mod prelude;
+/// Scrypto runtime abstraction.
+pub mod runtime;
 
 // Export macros
 mod macros;
-pub use macros::*;
-
-// Re-export radix engine derives
-pub extern crate radix_engine_derive;
-pub use radix_engine_derive::{scrypto, Describe};
 
 // Re-export Scrypto derive.
 extern crate scrypto_derive;
-pub use scrypto_derive::{blueprint, import, NonFungibleData};
 
-pub extern crate radix_engine_interface;
-pub extern crate scrypto_abi;
+pub use scrypto_derive::{blueprint, NonFungibleData};
 
-// This is to make derives work within this crate.
-// See: https://users.rust-lang.org/t/how-can-i-use-my-derive-macro-from-the-crate-that-declares-the-trait/60502
+// Re-export Radix Engine Interface modules.
+extern crate radix_engine_interface;
+pub use radix_engine_interface::{api, blueprints, object_modules};
+
+// Re-export Radix Engine Common modules.
+extern crate radix_common;
+pub use radix_common::{address, constants, crypto, data, math, network, time};
+
+pub mod types {
+    // for backward compatibility
+    pub use radix_common::types::*;
+    pub use radix_engine_interface::types::*;
+}
+
+// Re-export blueprint schema init, for use in `#[blueprint]` macro
+pub use radix_blueprint_schema_init;
+
+// extern crate self as X; in lib.rs allows ::X and X to resolve to this crate inside this crate.
+// This enables procedural macros which output code involving paths to this crate, to work inside
+// this crate. See this link for details:
+// https://users.rust-lang.org/t/how-can-i-use-my-derive-macro-from-the-crate-that-declares-the-trait/60502
+//
+// IMPORTANT:
+// This should never be pub, else `X::X::X::X::...` becomes a valid path in downstream crates,
+// which we've discovered can cause really bad autocomplete times (when combined with other
+// specific imports, generic traits, resolution paths which likely trigger edge cases in
+// Rust Analyzer which get stuck on these infinite possible paths)
 extern crate self as scrypto;
 
 /// Sets up panic hook.
 pub fn set_up_panic_hook() {
     #[cfg(not(feature = "alloc"))]
     std::panic::set_hook(Box::new(|info| {
-        // parse message
-        let payload = info
-            .payload()
-            .downcast_ref::<&str>()
-            .map(ToString::to_string)
-            .or(info
-                .payload()
-                .downcast_ref::<String>()
-                .map(ToString::to_string))
-            .unwrap_or(String::new());
+        let mut message = String::new();
+
+        // parse payload
+        if let Some(s) = info.payload().downcast_ref::<&str>() {
+            message.push_str(s);
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            message.push_str(s);
+        } else {
+            message.push_str("Panic")
+        }
+
+        message.push_str(" @ ");
 
         // parse location
-        let location = if let Some(l) = info.location() {
-            format!("{}:{}:{}", l.file(), l.line(), l.column())
+        if let Some(l) = info.location() {
+            message.push_str(l.file());
+            message.push_str(":");
+            message.push_str(&l.line().to_string());
+            message.push_str(":");
+            message.push_str(&l.column().to_string());
         } else {
-            "<unknown>".to_owned()
+            message.push_str("<unknown>");
         };
 
-        crate::runtime::Logger::error(sbor::rust::format!(
-            "Panicked at '{}', {}",
-            payload,
-            location
-        ));
+        crate::runtime::Runtime::panic(message);
     }));
+}
+
+#[cfg(all(feature = "coverage"))]
+#[no_mangle]
+pub unsafe extern "C" fn dump_coverage() -> types::Slice {
+    let mut coverage = vec![];
+    minicov::capture_coverage(&mut coverage).unwrap();
+    engine::wasm_api::forget_vec(coverage)
 }

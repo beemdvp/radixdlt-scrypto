@@ -1,92 +1,123 @@
-use radix_engine_interface::api::api::{EngineApi, Invokable};
-use radix_engine_interface::api::types::RENodeId;
-use radix_engine_interface::math::Decimal;
-use radix_engine_interface::model::*;
-use sbor::rust::collections::BTreeSet;
-use scrypto::engine::scrypto_env::ScryptoEnv;
+use radix_common::data::scrypto::model::*;
+use radix_common::data::scrypto::{scrypto_decode, scrypto_encode};
+use radix_common::math::Decimal;
+use radix_engine_interface::blueprints::resource::*;
+use radix_engine_interface::types::*;
+use sbor::rust::collections::IndexSet;
+use scrypto::engine::scrypto_env::ScryptoVmV1Api;
 
-/// Represents the auth zone, which is used by system for checking
-/// if this component is allowed to
-///
-/// 1. Call methods on another component;
-/// 2. Access resource system.
-pub struct ComponentAuthZone {}
+pub trait ScryptoAuthZone {
+    fn push<P: Into<Proof>>(&self, proof: P);
 
-impl ComponentAuthZone {
-    pub fn push<P: Into<Proof>>(proof: P) {
-        let mut env = ScryptoEnv;
-        let owned_node_ids = env.sys_get_visible_nodes().unwrap();
-        let node_id = owned_node_ids
-            .into_iter()
-            .find(|n| matches!(n, RENodeId::AuthZoneStack(..)))
-            .expect("AuthZone does not exist");
+    fn pop(&self) -> Option<Proof>;
 
+    fn create_proof_of_amount<A: Into<Decimal>>(
+        &self,
+        amount: A,
+        resource_address: ResourceAddress,
+    ) -> Proof;
+
+    fn create_proof_of_non_fungibles(
+        &self,
+        ids: IndexSet<NonFungibleLocalId>,
+        resource_address: ResourceAddress,
+    ) -> NonFungibleProof;
+
+    fn create_proof_of_all(&self, resource_address: ResourceAddress) -> Proof;
+
+    fn drop_proofs(&self);
+
+    fn drop_signature_proofs(&self);
+
+    fn drop_regular_proofs(&self);
+}
+
+impl ScryptoAuthZone for AuthZoneRef {
+    fn push<P: Into<Proof>>(&self, proof: P) {
         let proof: Proof = proof.into();
-
-        env.invoke(AuthZonePushInvocation {
-            receiver: node_id.into(),
-            proof,
-        })
-        .unwrap();
+        ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_PUSH_IDENT,
+            scrypto_encode(&AuthZonePushInput { proof }).unwrap(),
+        );
     }
 
-    pub fn pop() -> Proof {
-        let mut env = ScryptoEnv;
-        let owned_node_ids = env.sys_get_visible_nodes().unwrap();
-        let node_id = owned_node_ids
-            .into_iter()
-            .find(|n| matches!(n, RENodeId::AuthZoneStack(..)))
-            .expect("AuthZone does not exist");
-        env.invoke(AuthZonePopInvocation {
-            receiver: node_id.into(),
-        })
-        .unwrap()
+    fn pop(&self) -> Option<Proof> {
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_POP_IDENT,
+            scrypto_encode(&AuthZonePopInput {}).unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
     }
 
-    pub fn create_proof(resource_address: ResourceAddress) -> Proof {
-        let mut env = ScryptoEnv;
-        let owned_node_ids = env.sys_get_visible_nodes().unwrap();
-        let node_id = owned_node_ids
-            .into_iter()
-            .find(|n| matches!(n, RENodeId::AuthZoneStack(..)))
-            .expect("AuthZone does not exist");
-        env.invoke(AuthZoneCreateProofInvocation {
-            receiver: node_id.into(),
-            resource_address,
-        })
-        .unwrap()
-    }
-
-    pub fn create_proof_by_amount(amount: Decimal, resource_address: ResourceAddress) -> Proof {
-        let mut env = ScryptoEnv;
-        let owned_node_ids = env.sys_get_visible_nodes().unwrap();
-        let node_id = owned_node_ids
-            .into_iter()
-            .find(|n| matches!(n, RENodeId::AuthZoneStack(..)))
-            .expect("AuthZone does not exist");
-        env.invoke(AuthZoneCreateProofByAmountInvocation {
-            receiver: node_id.into(),
-            amount,
-            resource_address,
-        })
-        .unwrap()
-    }
-
-    pub fn create_proof_by_ids(
-        ids: &BTreeSet<NonFungibleId>,
+    fn create_proof_of_amount<A: Into<Decimal>>(
+        &self,
+        amount: A,
         resource_address: ResourceAddress,
     ) -> Proof {
-        let mut env = ScryptoEnv;
-        let owned_node_ids = env.sys_get_visible_nodes().unwrap();
-        let node_id = owned_node_ids
-            .into_iter()
-            .find(|n| matches!(n, RENodeId::AuthZoneStack(..)))
-            .expect("AuthZone does not exist");
-        env.invoke(AuthZoneCreateProofByIdsInvocation {
-            receiver: node_id.into(),
-            ids: ids.clone(),
-            resource_address,
-        })
-        .unwrap()
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_CREATE_PROOF_OF_AMOUNT_IDENT,
+            scrypto_encode(&AuthZoneCreateProofOfAmountInput {
+                resource_address,
+                amount: amount.into(),
+            })
+            .unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
+    }
+
+    fn create_proof_of_non_fungibles(
+        &self,
+        ids: IndexSet<NonFungibleLocalId>,
+        resource_address: ResourceAddress,
+    ) -> NonFungibleProof {
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_CREATE_PROOF_OF_NON_FUNGIBLES_IDENT,
+            scrypto_encode(&AuthZoneCreateProofOfNonFungiblesInput {
+                resource_address,
+                ids,
+            })
+            .unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
+    }
+
+    fn create_proof_of_all(&self, resource_address: ResourceAddress) -> Proof {
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_CREATE_PROOF_OF_ALL_IDENT,
+            scrypto_encode(&AuthZoneCreateProofOfAllInput { resource_address }).unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
+    }
+
+    fn drop_proofs(&self) {
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_DROP_PROOFS_IDENT,
+            scrypto_encode(&AuthZoneDropProofsInput {}).unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
+    }
+
+    fn drop_signature_proofs(&self) {
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_DROP_SIGNATURE_PROOFS_IDENT,
+            scrypto_encode(&AuthZoneDropSignatureProofsInput {}).unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
+    }
+
+    fn drop_regular_proofs(&self) {
+        let rtn = ScryptoVmV1Api::object_call(
+            &self.0,
+            AUTH_ZONE_DROP_REGULAR_PROOFS_IDENT,
+            scrypto_encode(&AuthZoneDropRegularProofsInput {}).unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
     }
 }

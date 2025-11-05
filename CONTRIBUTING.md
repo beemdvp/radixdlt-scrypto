@@ -49,7 +49,7 @@ Release workflow:
    ```
 4. Install Scrypto CLIs
    ```bash
-   cargo install --git https://github.com/radixdlt/radixdlt-scrypto --branch develop simulator
+   cargo install --git https://github.com/radixdlt/radixdlt-scrypto --branch develop radix-clis
    ```
 5. (Recommended) Install VSCode and the following plugins
    * [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
@@ -88,6 +88,22 @@ Release workflow:
         ```
     more details: [sccache - Shared Compilation Cache](https://github.com/mozilla/sccache)
 
+8. (Optional) Enable LFS to pull assets under `assets-lfs`
+    1. Install `git-lfs`:
+        - MacOS
+          ```
+          brew install git-lfs
+          ```
+        - Ubuntu
+          ```
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+          sudo apt-get install git-lfs
+          ```
+    2. Pull
+        ```
+        git lfs install
+        git lfs pull
+        ```
 
 Bash scripts that might be of help:
 * `format.sh` - Formats the entire repo
@@ -95,6 +111,26 @@ Bash scripts that might be of help:
 * `test.sh` - Runs the essential tests
 * `test_extra.sh` - Runs the additional tests
 * `assets/update-assets.sh` - Updates `Account`/`Faucet` scrypto packages (needed when your change would affect the output WASM)
+
+## Project Layout
+
+- `radix-blueprint-schema-init`: Blueprint schema initialization structures, used by Radix Package Definition (RPD).
+- `radix-clis`: Various CLI tools, like `resim`, `scrypto`, `rtmc` and `rtmd`.
+- `radix-common-derive`: Macros for defining `Decimal` and `PreciseDecimal`.
+- `radix-common`: Common libraries used by Radix Engine and Scrypto.
+- `radix-engine`: The Radix Engine implementation.
+- `radix-native-sdk`: Library to assist native blueprint development.
+- `radix-sbor-derives`: Macros for encoding and decoding Scrypto SBOR and Manifest SBOR data.
+- `radix-substate-store-impls`: Various substate store implementations.
+- `radix-substate-store-interface`: The interface of any substate store.
+- `radix-substate-store-queries`: Interprets data in substate data by injecting high-level knowledge.
+- `radix-transaction-scenarios`: Defines various transaction scenarios, for testing.
+- `radix-transactions`: Radix transaction manifest compiler, transaction models, signing and validating logic.
+- `sbor-derive`: Macros for encoding and decoding SBOR data.
+- `sbor`: A generic binary data format, upon which Scrypto SBOR and Manifest SBOR are built.
+- `scrypto-derive`: Macros for defining blueprints.
+- `scrypto-test`: Library for testing Scrypto blueprints.
+- `scrypto`: Scrypto language abstraction.
 
 ## Branching strategy
 
@@ -165,3 +201,40 @@ Please follow the convention below for commit messages:
 *  Use the imperative mood in the subject line
 *  Wrap the body at 72 characters
 *  Use the body to explain what and why vs. how, separating paragraphs with an empty line.
+
+### Deterministic execution
+
+Since the Radix Engine is used in a consensus-driven environment, all results of a particular
+transaction (e.g. final state changes and emitted events) must always be exactly the same, no matter
+where and when the transaction is executed.
+
+However, some wide-spread programming concepts and data structures are inherently non-deterministic,
+so - by convention - we choose to **not** use them at all (rather than to analyze their potential
+impact on non-deterministic results on a per-usage basis).
+
+Apart from some obvious "things to avoid" (like, using a random value, or a wall-clock), please
+observe the detailed rules below:
+
+#### HashMap and HashSet usage
+
+We explicitly **ban** the plain `HashMap` and `HashSet` usage from production code, including macro
+definitions (i.e. these very structs may only be used in tests and test utilities).
+
+However, hash-based structures are useful and have wonderful runtime characteristics, and actually
+only introduce non-deterministic behaviors when iterated over. Hence, we provide the following
+ways to use them:
+
+- Inside **macro definitions**, **use the tree-based replacements** (`BTreeMap` and `BTreeSet`).
+  - The reasoning is: macros are evaluated during compilation, so we do not need O(1) runtime
+    performance, and we prefer to avoid pulling in dependencies to other alternatives.
+- If you do **not need to iterate** over the collection (e.g. use a `HashMap` only in a "put + get"
+  manner), then **use our custom wrapper** `NonIterMap`, which exposes the deterministic part of the
+  `HashMap`'s API (i.e. excludes iteration).
+- If elements of the iterated collection have some well-defined, intuitive natural ordering, then
+  **use the tree-based replacements** (`BTreeMap` and `BTreeSet`).
+- If you need to iterate over the collection in some **custom order** (e.g. order of insertion), or 
+  if you do not care about the order at all, then **use the indexed alternative**, `IndexMap` (we
+  export it from an external library).
+  - It is essentially a `Vec`, with a `HashMap` on the side (for O(1) access), so it can accommodate
+    arbitrary (re-)ordering of elements (having methods like `.move_index(from, to)` and
+    `sort_by()`).

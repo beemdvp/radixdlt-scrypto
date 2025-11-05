@@ -1,17 +1,15 @@
-use radix_engine_interface::api::api::EngineApi;
-use radix_engine_interface::api::types::{
-    ComponentOffset, KeyValueStoreOffset, LockHandle, RENodeId, SubstateOffset,
-};
-use radix_engine_interface::data::{scrypto_decode, scrypto_encode, ScryptoDecode, ScryptoEncode};
+use radix_common::data::scrypto::{scrypto_decode, scrypto_encode, ScryptoDecode, ScryptoEncode};
+use radix_engine_interface::api::field_api::LockFlags;
+use radix_engine_interface::api::ACTOR_STATE_SELF;
+use radix_engine_interface::types::*;
 use sbor::rust::fmt;
 use sbor::rust::marker::PhantomData;
 use sbor::rust::ops::{Deref, DerefMut};
-use scrypto::engine::scrypto_env::ScryptoEnv;
-
-use crate::component::{ComponentStateSubstate, KeyValueStoreEntrySubstate};
+use sbor::rust::prelude::*;
+use scrypto::engine::scrypto_env::ScryptoVmV1Api;
 
 pub struct DataRef<V: ScryptoEncode> {
-    lock_handle: LockHandle,
+    lock_handle: SubstateHandle,
     value: V,
 }
 
@@ -22,8 +20,11 @@ impl<V: fmt::Display + ScryptoEncode> fmt::Display for DataRef<V> {
 }
 
 impl<V: ScryptoEncode> DataRef<V> {
-    pub fn new(lock_handle: LockHandle, value: V) -> DataRef<V> {
-        DataRef { lock_handle, value }
+    pub fn new(lock_handle: SubstateHandle, substate: V) -> DataRef<V> {
+        DataRef {
+            lock_handle,
+            value: substate,
+        }
     }
 }
 
@@ -37,14 +38,18 @@ impl<V: ScryptoEncode> Deref for DataRef<V> {
 
 impl<V: ScryptoEncode> Drop for DataRef<V> {
     fn drop(&mut self) {
-        let mut env = ScryptoEnv;
-        env.sys_drop_lock(self.lock_handle).unwrap();
+        ScryptoVmV1Api::field_entry_close(self.lock_handle);
     }
 }
 
+pub enum DataOrigin {
+    KeyValueStoreEntry,
+    ComponentState,
+}
+
 pub struct DataRefMut<V: ScryptoEncode> {
-    lock_handle: LockHandle,
-    offset: SubstateOffset,
+    lock_handle: SubstateHandle,
+    origin: DataOrigin,
     value: V,
 }
 
@@ -55,10 +60,10 @@ impl<V: fmt::Display + ScryptoEncode> fmt::Display for DataRefMut<V> {
 }
 
 impl<V: ScryptoEncode> DataRefMut<V> {
-    pub fn new(lock_handle: LockHandle, offset: SubstateOffset, value: V) -> DataRefMut<V> {
+    pub fn new(lock_handle: SubstateHandle, origin: DataOrigin, value: V) -> DataRefMut<V> {
         DataRefMut {
             lock_handle,
-            offset,
+            origin,
             value,
         }
     }
@@ -66,20 +71,12 @@ impl<V: ScryptoEncode> DataRefMut<V> {
 
 impl<V: ScryptoEncode> Drop for DataRefMut<V> {
     fn drop(&mut self) {
-        let mut env = ScryptoEnv;
-        let bytes = scrypto_encode(&self.value).unwrap();
-        let substate = match &self.offset {
-            SubstateOffset::KeyValueStore(KeyValueStoreOffset::Entry(..)) => {
-                scrypto_encode(&KeyValueStoreEntrySubstate(Some(bytes))).unwrap()
-            }
-            SubstateOffset::Component(ComponentOffset::State) => {
-                scrypto_encode(&ComponentStateSubstate { raw: bytes }).unwrap()
-            }
-            s @ _ => panic!("Unsupported substate: {:?}", s),
+        let substate = match &self.origin {
+            DataOrigin::KeyValueStoreEntry => scrypto_encode(&Some(&self.value)).unwrap(),
+            DataOrigin::ComponentState => scrypto_encode(&self.value).unwrap(),
         };
-
-        env.sys_write(self.lock_handle, substate).unwrap();
-        env.sys_drop_lock(self.lock_handle).unwrap();
+        ScryptoVmV1Api::field_entry_write(self.lock_handle, substate);
+        ScryptoVmV1Api::field_entry_close(self.lock_handle);
     }
 }
 
@@ -97,86 +94,34 @@ impl<V: ScryptoEncode> DerefMut for DataRefMut<V> {
     }
 }
 
-pub struct DataPointer<V: 'static + ScryptoEncode + ScryptoDecode> {
-    node_id: RENodeId,
-    offset: SubstateOffset,
+pub struct ComponentStatePointer<V: 'static + ScryptoEncode + ScryptoDecode> {
     phantom_data: PhantomData<V>,
 }
 
-impl<V: 'static + ScryptoEncode + ScryptoDecode> DataPointer<V> {
-    pub fn new(node_id: RENodeId, offset: SubstateOffset) -> Self {
+impl<V: 'static + ScryptoEncode + ScryptoDecode> ComponentStatePointer<V> {
+    pub fn new() -> Self {
         Self {
-            node_id,
-            offset,
             phantom_data: PhantomData,
         }
     }
 
     pub fn get(&self) -> DataRef<V> {
-        let mut env = ScryptoEnv;
-
-        let lock_handle = env
-            .sys_lock_substate(self.node_id, self.offset.clone(), false)
-            .unwrap();
-        let raw_substate = env.sys_read(lock_handle).unwrap();
-        match &self.offset {
-            SubstateOffset::KeyValueStore(KeyValueStoreOffset::Entry(..)) => {
-                let substate: KeyValueStoreEntrySubstate = scrypto_decode(&raw_substate).unwrap();
-                DataRef {
-                    lock_handle,
-                    value: scrypto_decode(&substate.0.unwrap()).unwrap(),
-                }
-            }
-            SubstateOffset::Component(ComponentOffset::State) => {
-                let substate: ComponentStateSubstate = scrypto_decode(&raw_substate).unwrap();
-                DataRef {
-                    lock_handle,
-                    value: scrypto_decode(&substate.raw).unwrap(),
-                }
-            }
-            _ => {
-                let substate: V = scrypto_decode(&raw_substate).unwrap();
-                DataRef {
-                    lock_handle,
-                    value: substate,
-                }
-            }
-        }
+        let lock_handle =
+            ScryptoVmV1Api::actor_open_field(ACTOR_STATE_SELF, 0u8, LockFlags::read_only());
+        let raw_substate = ScryptoVmV1Api::field_entry_read(lock_handle);
+        let value: V = scrypto_decode(&raw_substate).unwrap();
+        DataRef { lock_handle, value }
     }
 
     pub fn get_mut(&mut self) -> DataRefMut<V> {
-        let mut env = ScryptoEnv;
-
-        let lock_handle = env
-            .sys_lock_substate(self.node_id, self.offset.clone(), true)
-            .unwrap();
-        let raw_substate = env.sys_read(lock_handle).unwrap();
-
-        match &self.offset {
-            SubstateOffset::KeyValueStore(KeyValueStoreOffset::Entry(..)) => {
-                let substate: KeyValueStoreEntrySubstate = scrypto_decode(&raw_substate).unwrap();
-                DataRefMut {
-                    lock_handle,
-                    offset: self.offset.clone(),
-                    value: scrypto_decode(&substate.0.unwrap()).unwrap(),
-                }
-            }
-            SubstateOffset::Component(ComponentOffset::State) => {
-                let substate: ComponentStateSubstate = scrypto_decode(&raw_substate).unwrap();
-                DataRefMut {
-                    lock_handle,
-                    offset: self.offset.clone(),
-                    value: scrypto_decode(&substate.raw).unwrap(),
-                }
-            }
-            _ => {
-                let substate: V = scrypto_decode(&raw_substate).unwrap();
-                DataRefMut {
-                    lock_handle,
-                    offset: self.offset.clone(),
-                    value: substate,
-                }
-            }
+        let lock_handle =
+            ScryptoVmV1Api::actor_open_field(ACTOR_STATE_SELF, 0u8, LockFlags::MUTABLE);
+        let raw_substate = ScryptoVmV1Api::field_entry_read(lock_handle);
+        let value: V = scrypto_decode(&raw_substate).unwrap();
+        DataRefMut {
+            lock_handle,
+            origin: DataOrigin::ComponentState,
+            value,
         }
     }
 }

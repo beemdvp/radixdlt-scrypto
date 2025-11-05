@@ -1,48 +1,43 @@
 [package]
 name = "radix-engine-interface"
-version = "0.8.0"
+version = "1.3.0"
 edition = "2021"
+description = "The interface between system layer and VM layer, from the Radix DLT project."
+readme = "README.md"
+license-file = "../LICENSE"
+repository = "https://github.com/radixdlt/radixdlt-scrypto"
 
 [dependencies]
-sha2 = { version = "0.10.2", default-features = false }
-sha3 = { version = "0.10.1", default-features = false }
-hex = { version = "0.4.3", default-features = false }
-num-traits = { version = "0.2.15", default-features = false }
-num-integer = { version = "0.1.45", default-features = false }
-num-bigint = { version = "0.4.3", default-features = false }
-bech32 = { version = "0.9.0", default-features = false }
-sbor = { path = "../sbor", default-features = false }
-radix-engine-derive = { path = "../radix-engine-derive", default-features = false }
-scrypto-abi = { path = "../scrypto-abi", default-features = false }
-utils = { path = "../utils", default-features = false }
-paste = { version = "1.0.7"}
-serde = { version = "1.0.144", default-features = false, optional = true }
-serde_with = { version = "2.0.1", optional = true }
-strum = { version = "0.24", default-features = false, features = ["derive"] }
-bnum = { version = "0.4.0", default-features = false, features = ["numtraits"] }
+sbor = { workspace = true }
+radix-common = { workspace = true }
+radix-common-derive = { workspace = true }
+radix-blueprint-schema-init = { workspace = true }
+radix-rust = { workspace = true }
+
+hex = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+bitflags = { workspace = true }
+serde = { workspace = true, optional = true, features=["derive"] }
+serde_json = { workspace = true }
+lazy_static = { workspace = true }
+const-sha1 = { workspace = true } 
+arbitrary = { workspace = true, features = ["derive"], optional = true }
+paste = { workspace = true }
+regex = { workspace = true }
 
 [dev-dependencies]
-serde_json = { version = "1.0.81", default-features = false }
-criterion = { version = "0.3", features = ["html_reports"] }
-# This is for math benchmarks for comparison purposes.
-# Fast alternative to bigint but unfortunately not cross-compiled to WASM
-rug = { version = "1.18" }
-num-integer = { version = "0.1.45", default-features = false }
-ethnum = {version = "1.3.2", default-features = false }
-
-[[bench]]
-name = "math"
-harness = false
+radix-common = { workspace = true, features = ["secp256k1_sign_and_validate"] }
 
 [features]
 # You should enable either `std` or `alloc`
 default = ["std"]
-std = ["hex/std", "sbor/std", "scrypto-abi/std", "radix-engine-derive/std", "strum/std", "utils/std", "serde_json/std"]
-alloc = ["hex/alloc", "sbor/alloc", "scrypto-abi/alloc", "radix-engine-derive/alloc", "utils/alloc", "serde_json/alloc"]
+std = ["hex/std", "serde_json/std", "sbor/std", "radix-blueprint-schema-init/std", "radix-common/std", "radix-common-derive/std", "strum/std", "radix-rust/std", "serde?/std"]
+alloc = ["hex/alloc", "serde_json/alloc", "sbor/alloc", "radix-blueprint-schema-init/alloc", "radix-common/alloc", "radix-common-derive/alloc", "radix-rust/alloc", "serde?/alloc"]
 
-# Turn on this feature to enable tracing.
-trace = ["radix-engine-derive/trace"]
+# This flag is set by fuzz-tests framework and it is used to disable/enable some optional features
+# to let fuzzing work
+fuzzing = ["arbitrary", "sbor/fuzzing", "radix-common/fuzzing", "radix-rust/fuzzing", "dep:serde"]
 
-# Enable serde derives
-serde = ["utils/serde", "sbor/serde", "scrypto-abi/serde", "serde/derive", "hex/serde", "serde_with"]
-
+# Ref: https://bheisler.github.io/criterion.rs/book/faq.html#cargo-bench-gives-unrecognized-option-errors-for-valid-command-line-options
+[lib]
+bench = false

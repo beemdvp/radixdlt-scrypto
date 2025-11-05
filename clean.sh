@@ -1,22 +1,18 @@
 #!/bin/bash
 
-set -x
 set -e
 
 cd "$(dirname "$0")"
 
-(cd sbor; cargo clean)
-(cd sbor-derive; cargo clean)
-(cd sbor-tests; cargo clean)
-(cd scrypto; cargo clean)
-(cd scrypto-derive; cargo clean)
-(cd scrypto-tests; cargo clean)
-(cd radix-engine; cargo clean)
-(cd radix-engine-stores; cargo clean)
-(cd transaction; cargo clean)
-(cd simulator; cargo clean)
-
-(cd assets/blueprints/account; cargo clean)
-(cd assets/blueprints/faucet; cargo clean)
-(cd examples/hello-world; cargo clean)
-(cd examples/no-std; cargo clean)
+(set -x; cd .; cargo clean)
+(set -x; cd radix-engine-tests/assets/blueprints; cargo clean)
+(set -x; cd radix-clis/tests/blueprints; cargo clean)
+(set -x; cd scrypto-test/tests/blueprints; cargo clean)
+(set -x; cd scrypto-test/assets/blueprints; cargo clean)
+(set -x; cd scrypto-compiler/tests/assets/scenario_1; cargo clean)
+(set -x; cd scrypto-compiler/tests/assets/scenario_2; cargo clean)
+(
+    find "examples" -mindepth 2 -maxdepth 2 -type f \( -name Cargo.toml \) -print \
+    | awk '{print substr($1, 1, length($1)-length("Cargo.toml"))}' \
+    | xargs -I '{}' bash -c "set -x; cd {}; cargo clean"
+)

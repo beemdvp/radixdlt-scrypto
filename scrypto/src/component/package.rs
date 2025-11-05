@@ -1,35 +1,55 @@
-use crate::engine::scrypto_env::ScryptoEnv;
-use crate::runtime::*;
-use radix_engine_interface::api::api::Invokable;
-use radix_engine_interface::data::ScryptoDecode;
-use radix_engine_interface::model::*;
-use sbor::rust::collections::BTreeMap;
-use sbor::rust::fmt::Debug;
-use sbor::rust::string::String;
-use sbor::rust::vec::Vec;
+use super::HasTypeInfo;
+use crate::prelude::{Global, HasStub, ObjectStub, ObjectStubHandle};
+use radix_common::prelude::PACKAGE_PACKAGE;
+use radix_engine_interface::blueprints::package::{
+    PackageClaimRoyaltiesInput, PACKAGE_BLUEPRINT, PACKAGE_CLAIM_ROYALTIES_IDENT,
+};
+use radix_engine_interface::blueprints::resource::FungibleBucket;
+use radix_engine_interface::types::*;
+use sbor::rust::prelude::*;
 
-/// Represents a published package.
-#[derive(Debug)]
-pub struct BorrowedPackage(pub(crate) PackageAddress);
+pub type Package = Global<PackageStub>;
 
-impl BorrowedPackage {
-    /// Invokes a function on this package.
-    pub fn call<T: ScryptoDecode>(&self, blueprint_name: &str, function: &str, args: Vec<u8>) -> T {
-        Runtime::call_function(self.0, blueprint_name, function, args)
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct PackageStub(pub ObjectStubHandle);
+
+impl HasStub for PackageStub {
+    type Stub = Self;
+}
+
+impl HasTypeInfo for PackageStub {
+    const PACKAGE_ADDRESS: Option<PackageAddress> = Some(PACKAGE_PACKAGE);
+
+    const BLUEPRINT_NAME: &'static str = PACKAGE_BLUEPRINT;
+
+    const OWNED_TYPE_NAME: &'static str = "OwnedPackage";
+
+    const GLOBAL_TYPE_NAME: &'static str = "GlobalPackage";
+}
+
+impl ObjectStub for PackageStub {
+    type AddressType = PackageAddress;
+
+    fn new(handle: ObjectStubHandle) -> Self {
+        Self(handle)
     }
 
-    pub fn set_royalty_config(&self, royalty_config: BTreeMap<String, RoyaltyConfig>) {
-        let mut env = ScryptoEnv;
-        env.invoke(PackageSetRoyaltyConfigInvocation {
-            receiver: self.0,
-            royalty_config,
-        })
-        .unwrap();
+    fn handle(&self) -> &ObjectStubHandle {
+        &self.0
     }
+}
 
-    pub fn claim_royalty(&self) -> Bucket {
-        let mut env = ScryptoEnv;
-        env.invoke(PackageClaimRoyaltyInvocation { receiver: self.0 })
-            .unwrap()
+impl PackageStub {
+    pub fn claim_royalties(&self) -> FungibleBucket {
+        self.call(
+            PACKAGE_CLAIM_ROYALTIES_IDENT,
+            &PackageClaimRoyaltiesInput {},
+        )
+    }
+}
+
+impl From<PackageAddress> for Package {
+    fn from(value: PackageAddress) -> Self {
+        Global(ObjectStub::new(ObjectStubHandle::Global(value.into())))
     }
 }

@@ -1,15 +1,24 @@
-use radix_engine_interface::api::api::Invokable;
-use radix_engine_interface::constants::CLOCK;
-use radix_engine_interface::model::*;
-use radix_engine_interface::time::*;
+use radix_common::constants::CONSENSUS_MANAGER;
+use radix_common::data::scrypto::{scrypto_decode, scrypto_encode};
+use radix_common::time::*;
+use radix_engine_interface::blueprints::consensus_manager::{
+    ConsensusManagerCompareCurrentTimeInputV2, ConsensusManagerGetCurrentTimeInputV2,
+    TimePrecision, CONSENSUS_MANAGER_COMPARE_CURRENT_TIME_IDENT,
+    CONSENSUS_MANAGER_GET_CURRENT_TIME_IDENT,
+};
 use sbor::rust::fmt::Debug;
-use scrypto::engine::scrypto_env::ScryptoEnv;
+use scrypto::engine::scrypto_env::ScryptoVmV1Api;
 
 /// The system clock
 #[derive(Debug)]
 pub struct Clock {}
 
 impl Clock {
+    /// Returns the current timestamp (in seconds)
+    pub fn current_time_rounded_to_seconds() -> Instant {
+        Self::current_time(TimePrecision::Second)
+    }
+
     /// Returns the current timestamp (in seconds), rounded down to minutes
     pub fn current_time_rounded_to_minutes() -> Instant {
         Self::current_time(TimePrecision::Minute)
@@ -17,12 +26,12 @@ impl Clock {
 
     /// Returns the current timestamp (in seconds), rounded down to the specified precision
     pub fn current_time(precision: TimePrecision) -> Instant {
-        let mut env = ScryptoEnv;
-        env.invoke(ClockGetCurrentTimeInvocation {
-            receiver: CLOCK,
-            precision: precision,
-        })
-        .unwrap()
+        let rtn = ScryptoVmV1Api::object_call(
+            CONSENSUS_MANAGER.as_node_id(),
+            CONSENSUS_MANAGER_GET_CURRENT_TIME_IDENT,
+            scrypto_encode(&ConsensusManagerGetCurrentTimeInputV2 { precision }).unwrap(),
+        );
+        scrypto_decode(&rtn).unwrap()
     }
 
     /// Returns true if current time, rounded down to a given precision,
@@ -57,13 +66,17 @@ impl Clock {
         precision: TimePrecision,
         operator: TimeComparisonOperator,
     ) -> bool {
-        let mut env = ScryptoEnv;
-        env.invoke(ClockCompareCurrentTimeInvocation {
-            receiver: CLOCK,
-            instant: instant,
-            precision: precision,
-            operator: operator,
-        })
-        .unwrap()
+        let rtn = ScryptoVmV1Api::object_call(
+            CONSENSUS_MANAGER.as_node_id(),
+            CONSENSUS_MANAGER_COMPARE_CURRENT_TIME_IDENT,
+            scrypto_encode(&ConsensusManagerCompareCurrentTimeInputV2 {
+                instant,
+                precision,
+                operator,
+            })
+            .unwrap(),
+        );
+
+        scrypto_decode(&rtn).unwrap()
     }
 }

@@ -1,12 +1,13 @@
 mod component;
-mod component_access_rules;
 mod kv_store;
+mod kv_store_data_ref;
+mod object;
 mod package;
-mod system;
+mod stubs;
 
 pub use component::*;
-pub use component_access_rules::Mutability::*;
-pub use component_access_rules::{ComponentAccessRules, Mutability};
 pub use kv_store::*;
-pub use package::BorrowedPackage;
-pub use system::{component_system, init_component_system, ComponentSystem};
+pub use kv_store_data_ref::*;
+pub use object::*;
+pub use package::*;
+pub use stubs::*;
