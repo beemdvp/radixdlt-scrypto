@@ -98,9 +98,9 @@ inferno = { version = "0.11.19" }
 itertools = { version = "0.10.3" }
 lazy_static = { version = "1.4.0" }
 linreg = { version = "0.2.0" }
-lru = { version = "0.8.1", default-features = false }
+lru = { version = "0.16.2", default-features = false }
 minicov = { version = "=0.3.5" } # Used for scrypto coverage. Has to be fixed for compatibility with the rust version we use.
-moka = { version = "0.9.9", features = ["sync"], default-features = false }
+moka = { version = "0.10.0", features = ["sync"], default-features = false }
 num-bigint = { version = "0.4.3", default-features = false }
 num-integer = { version = "0.1.45", default-features = false }
 num-traits = { version = "0.2.15", default-features = false }
