@@ -12,6 +12,8 @@ pub enum CompileProfile {
     Fast,
     /// Disables WASM optimization and enables all logs from error to trace level, by default used by Ledger Simulator.
     FastWithTraceLogs,
+    /// Disables WASM optimization and disables all logs.
+    FastWithNoLogs,
 }
 
 pub struct Compile;
@@ -54,6 +56,10 @@ impl Compile {
             CompileProfile::FastWithTraceLogs => {
                 compiler_builder.optimize_with_wasm_opt(None);
                 compiler_builder.log_level(Level::Trace); // all logs from error to trace
+            }
+            CompileProfile::FastWithNoLogs => {
+                compiler_builder.optimize_with_wasm_opt(None);
+                compiler_builder.disable_logs();
             }
         }
 
@@ -150,10 +156,10 @@ mod tests {
             .inspect_err(|e| println!("Scrypto cli build failed: {}", e))
             .unwrap();
 
-        // Run `scrypto build` for example blueprit
+        // Run `scrypto build` for example blueprint
         Command::new(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../radix-clis/target/release/scrypto"
+            "/../target/release/scrypto"
         ))
         .arg("build")
         .args(additional_args)

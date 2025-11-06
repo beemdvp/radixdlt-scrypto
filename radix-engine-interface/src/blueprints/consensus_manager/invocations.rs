@@ -30,7 +30,7 @@ pub struct ConsensusManagerCreateInput {
     pub initial_current_leader: Option<ValidatorIndex>,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ConsensusManagerCreateManifestInput {
     pub validator_owner_token_address: ManifestAddressReservation,
     pub component_address: ManifestAddressReservation,
@@ -381,7 +381,7 @@ pub struct ConsensusManagerCreateValidatorInput {
     pub xrd_payment: Bucket,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ConsensusManagerCreateValidatorManifestInput {
     pub key: Secp256k1PublicKey,
     pub fee_factor: Decimal,
@@ -415,7 +415,7 @@ pub struct ValidatorStakeAsOwnerInput {
     pub stake: Bucket,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorStakeAsOwnerManifestInput {
     pub stake: ManifestBucket,
 }
@@ -428,7 +428,7 @@ pub struct ValidatorStakeInput {
     pub stake: Bucket,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorStakeManifestInput {
     pub stake: ManifestBucket,
 }
@@ -441,20 +441,20 @@ pub struct ValidatorUnstakeInput {
     pub stake_unit_bucket: Bucket,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorUnstakeManifestInput {
     pub stake_unit_bucket: ManifestBucket,
 }
 
 pub type ValidatorUnstakeOutput = Bucket;
 
-pub const VALIDATOR_CLAIM_XRD_IDENT: &str = "claim_xrd";
+pub const VALIDATOR_CLAIM_RORK_IDENT: &str = "claim_xrd";
 #[derive(Debug, Eq, PartialEq, ScryptoSbor)]
 pub struct ValidatorClaimXrdInput {
     pub bucket: Bucket,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorClaimXrdManifestInput {
     pub bucket: ManifestBucket,
 }
@@ -506,7 +506,7 @@ pub type ValidatorAcceptsDelegatedStakeManifestInput = ValidatorAcceptsDelegated
 
 pub type ValidatorAcceptsDelegatedStakeOutput = bool;
 
-pub const VALIDATOR_TOTAL_STAKE_XRD_AMOUNT_IDENT: &str = "total_stake_xrd_amount";
+pub const VALIDATOR_TOTAL_STAKE_RORK_AMOUNT_IDENT: &str = "total_stake_xrd_amount";
 
 #[derive(Debug, Clone, Eq, PartialEq, Sbor)]
 pub struct ValidatorTotalStakeXrdAmountInput {}
@@ -562,7 +562,7 @@ pub const VALIDATOR_APPLY_EMISSION_IDENT: &str = "apply_emission";
 
 #[derive(Debug, Eq, PartialEq, ScryptoSbor)]
 pub struct ValidatorApplyEmissionInput {
-    /// A bucket with the emitted XRDs for this validator.
+    /// A bucket with the emitted RORKs for this validator.
     /// The validator should subtract the configured fee from this amount.
     pub xrd_bucket: Bucket,
     /// The *concluded* epoch's number. Informational-only.
@@ -573,9 +573,9 @@ pub struct ValidatorApplyEmissionInput {
     pub proposals_missed: u64,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorApplyEmissionManifestInput {
-    /// A bucket with the emitted XRDs for this validator.
+    /// A bucket with the emitted RORKs for this validator.
     /// The validator should subtract the configured fee from this amount.
     pub xrd_bucket: ManifestBucket,
     /// The *concluded* epoch's number. Informational-only.
@@ -592,15 +592,15 @@ pub const VALIDATOR_APPLY_REWARD_IDENT: &str = "apply_reward";
 
 #[derive(Debug, Eq, PartialEq, ScryptoSbor)]
 pub struct ValidatorApplyRewardInput {
-    /// A bucket with the rewarded XRDs (from transaction fees) for this validator.
+    /// A bucket with the rewarded RORKs (from transaction fees) for this validator.
     pub xrd_bucket: Bucket,
     /// The *concluded* epoch's number. Informational-only.
     pub epoch: Epoch,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorApplyRewardManifestInput {
-    /// A bucket with the rewarded XRDs (from transaction fees) for this validator.
+    /// A bucket with the rewarded RORKs (from transaction fees) for this validator.
     pub xrd_bucket: ManifestBucket,
     /// The *concluded* epoch's number. Informational-only.
     pub epoch: Epoch,
@@ -615,7 +615,7 @@ pub struct ValidatorLockOwnerStakeUnitsInput {
     pub stake_unit_bucket: Bucket,
 }
 
-#[derive(Debug, Eq, PartialEq, ManifestSbor)]
+#[derive(Debug, Eq, PartialEq, ManifestSbor, ScryptoDescribe)]
 pub struct ValidatorLockOwnerStakeUnitsManifestInput {
     pub stake_unit_bucket: ManifestBucket,
 }

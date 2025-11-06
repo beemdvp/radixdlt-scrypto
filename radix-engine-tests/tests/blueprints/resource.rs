@@ -31,8 +31,7 @@ fn test_take_from_vault_after_mint() {
     );
 
     // Assert
-    let result = receipt.expect_commit_success();
-    println!("{}", result.state_updates_string());
+    receipt.expect_commit_success();
 }
 
 #[test]
@@ -58,8 +57,7 @@ fn test_query_nonexistent_and_mint() {
     );
 
     // Assert
-    let result = receipt.expect_commit_success();
-    println!("{}", result.state_updates_string());
+    receipt.expect_commit_success();
 }
 
 #[test]
@@ -71,7 +69,7 @@ fn cannot_get_total_supply_of_xrd() {
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
         .call_method(
-            XRD,
+            RORK,
             RESOURCE_MANAGER_GET_TOTAL_SUPPLY_IDENT,
             manifest_args!(),
         )

@@ -122,7 +122,7 @@ impl ScenarioCore {
             |builder| {
                 builder
                     .get_free_xrd_from_faucet()
-                    .take_all_from_worktop(XRD, "free_xrd")
+                    .take_all_from_worktop(RORK, "free_xrd")
                     .try_deposit_or_abort(to_account, None, "free_xrd")
             },
             vec![],
@@ -417,9 +417,9 @@ pub enum DescribedAddress {
 impl<'a> ContextualDisplay<AddressDisplayContext<'a>> for DescribedAddress {
     type Error = fmt::Error;
 
-    fn contextual_format<F: fmt::Write>(
+    fn contextual_format(
         &self,
-        f: &mut F,
+        f: &mut fmt::Formatter,
         context: &AddressDisplayContext<'a>,
     ) -> Result<(), Self::Error> {
         match self {

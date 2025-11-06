@@ -265,7 +265,7 @@ pub mod collections {
         #[cfg(feature = "fuzzing")]
         pub type DefaultHashBuilder = crate::rust::collections::stub_hasher::StubHasher;
         #[cfg(all(not(feature = "fuzzing"), feature = "alloc"))]
-        pub type DefaultHashBuilder = hashbrown::hash_map::DefaultHashBuilder;
+        pub type DefaultHashBuilder = hashbrown::DefaultHashBuilder;
         #[cfg(all(not(feature = "fuzzing"), not(feature = "alloc")))]
         pub type DefaultHashBuilder = std::collections::hash_map::RandomState;
 
@@ -294,13 +294,13 @@ pub mod collections {
         #[macro_export]
         macro_rules! hashmap {
             ( ) => ({
-                $crate::rust::collections::hash_map::HashMap::default()
+                $crate::rust::collections::hash_map::new()
             });
             ( $($key:expr => $value:expr),* ) => ({
                 // Note: `stringify!($key)` is just here to consume the repetition,
                 // but we throw away that string literal during constant evaluation.
                 const CAP: usize = <[()]>::len(&[$({ stringify!($key); }),*]);
-                let mut temp = $crate::rust::collections::hash_map::HashMap::with_capacity(CAP);
+                let mut temp = $crate::rust::collections::hash_map::with_capacity(CAP);
                 $(
                     temp.insert($key, $value);
                 )*
@@ -318,7 +318,7 @@ pub mod collections {
         #[cfg(feature = "fuzzing")]
         pub type DefaultHashBuilder = crate::rust::collections::stub_hasher::StubHasher;
         #[cfg(all(not(feature = "fuzzing"), feature = "alloc"))]
-        pub type DefaultHashBuilder = hashbrown::hash_map::DefaultHashBuilder;
+        pub type DefaultHashBuilder = hashbrown::DefaultHashBuilder;
         #[cfg(all(not(feature = "fuzzing"), not(feature = "alloc")))]
         pub type DefaultHashBuilder = std::collections::hash_map::RandomState;
 
@@ -347,13 +347,13 @@ pub mod collections {
         #[macro_export]
         macro_rules! hashset {
             ( ) => ({
-                $crate::rust::collections::hash_set::HashSet::new()
+                $crate::rust::collections::hash_set::new()
             });
             ( $($key:expr),* ) => ({
                 // Note: `stringify!($key)` is just here to consume the repetition,
                 // but we throw away that string literal during constant evaluation.
                 const CAP: usize = <[()]>::len(&[$({ stringify!($key); }),*]);
-                let mut temp = $crate::rust::collections::hash_set::HashSet::with_capacity(CAP);
+                let mut temp = $crate::rust::collections::hash_set::with_capacity(CAP);
                 $(
                     temp.insert($key);
                 )*
@@ -393,7 +393,7 @@ pub mod collections {
         #[cfg(feature = "fuzzing")]
         pub type DefaultHashBuilder = crate::rust::collections::stub_hasher::StubHasher;
         #[cfg(all(not(feature = "fuzzing"), feature = "alloc"))]
-        pub type DefaultHashBuilder = hashbrown::hash_map::DefaultHashBuilder;
+        pub type DefaultHashBuilder = hashbrown::DefaultHashBuilder;
         #[cfg(all(not(feature = "fuzzing"), not(feature = "alloc")))]
         pub type DefaultHashBuilder = std::collections::hash_map::RandomState;
 
@@ -455,7 +455,7 @@ pub mod collections {
         #[cfg(feature = "fuzzing")]
         pub type DefaultHashBuilder = crate::rust::collections::stub_hasher::StubHasher;
         #[cfg(all(not(feature = "fuzzing"), feature = "alloc"))]
-        pub type DefaultHashBuilder = hashbrown::hash_map::DefaultHashBuilder;
+        pub type DefaultHashBuilder = hashbrown::DefaultHashBuilder;
         #[cfg(all(not(feature = "fuzzing"), not(feature = "alloc")))]
         pub type DefaultHashBuilder = std::collections::hash_map::RandomState;
 
@@ -515,7 +515,7 @@ pub mod collections {
         #[cfg(feature = "fuzzing")]
         pub type DefaultHashBuilder = crate::rust::collections::stub_hasher::StubHasher;
         #[cfg(all(not(feature = "fuzzing"), feature = "alloc"))]
-        pub type DefaultHashBuilder = hashbrown::hash_map::DefaultHashBuilder;
+        pub type DefaultHashBuilder = hashbrown::DefaultHashBuilder;
         #[cfg(all(not(feature = "fuzzing"), not(feature = "alloc")))]
         pub type DefaultHashBuilder = std::collections::hash_map::RandomState;
 

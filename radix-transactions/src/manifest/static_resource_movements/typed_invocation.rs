@@ -14,6 +14,7 @@ use radix_engine_interface::object_modules::royalty::*;
 use super::*;
 use radix_common::prelude::*;
 use radix_engine_interface::prelude::*;
+use radix_rust::rust::collections::HashMap;
 
 /// This macro defines a TypedManifestNativeInvocation type for our native blueprints. To make this
 /// easier to define this macro doesn't care about what package they live in when being INVOKED.
@@ -43,7 +44,7 @@ macro_rules! define_manifest_typed_invocation {
     ) => {
         paste::paste! {
             /* The TypedManifestNativeInvocation enum */
-            #[derive(Debug, ManifestSbor)]
+            #[derive(Debug, ManifestSbor, ScryptoDescribe)]
             pub enum TypedManifestNativeInvocation {
                 $(
                     [< $blueprint_ident BlueprintInvocation >]([< $blueprint_ident BlueprintInvocation >])
@@ -150,9 +151,81 @@ macro_rules! define_manifest_typed_invocation {
                 }
             }
 
+            #[derive(Debug)]
+            pub enum TypedManifestMethodNativeInvocationRef<'a> {
+                $(
+                    [< $blueprint_ident BlueprintMethod >](&'a [< $blueprint_ident BlueprintMethod >])
+                ),*
+            }
+
+            impl<'a> TryFrom<&'a TypedManifestNativeInvocation> for TypedManifestMethodNativeInvocationRef<'a> {
+                type Error = ();
+
+                fn try_from(value: &'a TypedManifestNativeInvocation) -> Result<Self, Self::Error> {
+                    match value {
+                        $(
+                            TypedManifestNativeInvocation::[< $blueprint_ident BlueprintInvocation >](
+                                [< $blueprint_ident BlueprintInvocation >]::Method(ref method)
+                            ) => Ok(
+                                TypedManifestMethodNativeInvocationRef::[< $blueprint_ident BlueprintMethod >](method)
+                            ),
+                        )*
+                        _ => Err(())
+                    }
+                }
+            }
+
+            #[derive(Debug)]
+            pub enum TypedManifestDirectMethodNativeInvocationRef<'a> {
+                $(
+                    [< $blueprint_ident BlueprintDirectMethod >](&'a [< $blueprint_ident BlueprintDirectMethod >])
+                ),*
+            }
+
+            impl<'a> TryFrom<&'a TypedManifestNativeInvocation> for TypedManifestDirectMethodNativeInvocationRef<'a> {
+                type Error = ();
+
+                fn try_from(value: &'a TypedManifestNativeInvocation) -> Result<Self, Self::Error> {
+                    match value {
+                        $(
+                            TypedManifestNativeInvocation::[< $blueprint_ident BlueprintInvocation >](
+                                [< $blueprint_ident BlueprintInvocation >]::DirectMethod(ref direct_method)
+                            ) => Ok(
+                                TypedManifestDirectMethodNativeInvocationRef::[< $blueprint_ident BlueprintDirectMethod >](direct_method)
+                            ),
+                        )*
+                        _ => Err(())
+                    }
+                }
+            }
+
+            #[derive(Debug)]
+            pub enum TypedManifestFunctionNativeInvocationRef<'a> {
+                $(
+                    [< $blueprint_ident BlueprintFunction >](&'a [< $blueprint_ident BlueprintFunction >])
+                ),*
+            }
+
+            impl<'a> TryFrom<&'a TypedManifestNativeInvocation> for TypedManifestFunctionNativeInvocationRef<'a> {
+                type Error = ();
+
+                fn try_from(value: &'a TypedManifestNativeInvocation) -> Result<Self, Self::Error> {
+                    match value {
+                        $(
+                            TypedManifestNativeInvocation::[< $blueprint_ident BlueprintInvocation >](
+                                [< $blueprint_ident BlueprintInvocation >]::Function(ref function)
+                            ) => Ok(
+                                TypedManifestFunctionNativeInvocationRef::[< $blueprint_ident BlueprintFunction >](function)
+                            ),
+                        )*
+                        _ => Err(())
+                    }
+                }
+            }
+
             /* The Method and Function types for each blueprint */
             $(
-                #[derive(Debug, ManifestSbor)]
+                #[derive(Debug, ManifestSbor, ScryptoDescribe)]
                 pub enum [< $blueprint_ident BlueprintInvocation >] {
                     Method([< $blueprint_ident BlueprintMethod >]),
                     DirectMethod([< $blueprint_ident BlueprintDirectMethod >]),
@@ -160,7 +233,7 @@ macro_rules! define_manifest_typed_invocation {
                 }
 
                 /* The Method Invocations */
-                #[derive(Debug, ManifestSbor)]
+                #[derive(Debug, ManifestSbor, ScryptoDescribe)]
                 pub enum [< $blueprint_ident BlueprintMethod >] {
                     $(
                         $method_ident($method_input)
@@ -197,7 +270,7 @@ macro_rules! define_manifest_typed_invocation {
                     }
                 }
 
-                #[derive(Debug, ManifestSbor)]
+                #[derive(Debug, ManifestSbor, ScryptoDescribe)]
                 pub enum [< $blueprint_ident BlueprintDirectMethod >] {
                     $(
                         $direct_method_ident($direct_method_input)
@@ -235,7 +308,7 @@ macro_rules! define_manifest_typed_invocation {
                 }
 
                 /* The Function Invocation */
-                #[derive(Debug, ManifestSbor)]
+                #[derive(Debug, ManifestSbor, ScryptoDescribe)]
                 pub enum [< $blueprint_ident BlueprintFunction >] {
                     $(
                         $function_ident($function_input)
@@ -313,6 +386,25 @@ macro_rules! define_manifest_typed_invocation {
                 }
             }
             pub use uniform_match_on_manifest_typed_invocation;
+
+            /// This is a function that's there for testing purposes only.
+            pub fn typed_native_invocation_function_table() -> HashMap<&'static str, HashMap<&'static str, HashMap<&'static str, SingleTypeSchema<ScryptoCustomSchema>>>> {
+                hashmap! {
+                    $(
+                        stringify!($blueprint_ident) => hashmap! {
+                            "Function" => hashmap![$(
+                                $function_name => generate_single_type_schema::<$function_input, ScryptoCustomSchema>()
+                            ),*],
+                            "Method" => hashmap![$(
+                                $method_name => generate_single_type_schema::<$method_input, ScryptoCustomSchema>()
+                            ),*],
+                            "DirectMethod" => hashmap![$(
+                                $direct_method_name => generate_single_type_schema::<$direct_method_input, ScryptoCustomSchema>()
+                            ),*],
+                        },
+                    )*
+                }
+            }
         }
     };
 }
@@ -515,6 +607,18 @@ define_manifest_typed_invocation! {
                 AccountRemoveAuthorizedDepositorManifestInput,
                 ACCOUNT_REMOVE_AUTHORIZED_DEPOSITOR_IDENT,
             ),
+            Balance => (
+                AccountBalanceManifestInput,
+                ACCOUNT_BALANCE_IDENT,
+            ),
+            NonFungibleLocalIds => (
+                AccountNonFungibleLocalIdsManifestInput,
+                ACCOUNT_NON_FUNGIBLE_LOCAL_IDS_IDENT,
+            ),
+            HasNonFungible => (
+                AccountHasNonFungibleManifestInput,
+                ACCOUNT_HAS_NON_FUNGIBLE_IDENT,
+            ),
         },
         direct_methods: {}
     },
@@ -580,7 +684,7 @@ define_manifest_typed_invocation! {
             ),
             ClaimXrd => (
                 ValidatorClaimXrdManifestInput,
-                VALIDATOR_CLAIM_XRD_IDENT,
+                VALIDATOR_CLAIM_RORK_IDENT,
             ),
             UpdateKey => (
                 ValidatorUpdateKeyManifestInput,
@@ -600,7 +704,7 @@ define_manifest_typed_invocation! {
             ),
             TotalStakeXrdAmount => (
                 ValidatorTotalStakeXrdAmountManifestInput,
-                VALIDATOR_TOTAL_STAKE_XRD_AMOUNT_IDENT,
+                VALIDATOR_TOTAL_STAKE_RORK_AMOUNT_IDENT,
             ),
             TotalStakeUnitSupply => (
                 ValidatorTotalStakeUnitSupplyManifestInput,
@@ -1167,6 +1271,10 @@ define_manifest_typed_invocation! {
             Get => (
                 RoleAssignmentGetManifestInput,
                 ROLE_ASSIGNMENT_GET_IDENT,
+            ),
+            GetOwnerRole => (
+                RoleAssignmentGetOwnerRoleManifestInput,
+                ROLE_ASSIGNMENT_GET_OWNER_ROLE_IDENT,
             ),
         },
         direct_methods: {}

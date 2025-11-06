@@ -196,15 +196,15 @@ pub struct TransactionFeeSummary {
     /// Total finalization cost units consumed.
     pub total_finalization_cost_units_consumed: u32,
 
-    /// Total execution cost in XRD.
+    /// Total execution cost in RORK.
     pub total_execution_cost_in_xrd: Decimal,
-    /// Total finalization cost in XRD.
+    /// Total finalization cost in RORK.
     pub total_finalization_cost_in_xrd: Decimal,
-    /// Total tipping cost in XRD.
+    /// Total tipping cost in RORK.
     pub total_tipping_cost_in_xrd: Decimal,
-    /// Total storage cost in XRD.
+    /// Total storage cost in RORK.
     pub total_storage_cost_in_xrd: Decimal,
-    /// Total royalty cost in XRD.
+    /// Total royalty cost in RORK.
     pub total_royalty_cost_in_xrd: Decimal,
 }
 
@@ -467,84 +467,6 @@ impl CommitResult {
             },
             TransactionOutcome::Failure(_) => panic!("Transaction failed"),
         }
-    }
-
-    pub fn state_updates(
-        &self,
-    ) -> BTreeMap<NodeId, BTreeMap<PartitionNumber, BTreeMap<SubstateKey, DatabaseUpdate>>> {
-        let mut updates = BTreeMap::<
-            NodeId,
-            BTreeMap<PartitionNumber, BTreeMap<SubstateKey, DatabaseUpdate>>,
-        >::new();
-        for (node_id, x) in &self.state_updates.by_node {
-            let NodeStateUpdates::Delta { by_partition } = x;
-            for (partition_num, y) in by_partition {
-                match y {
-                    PartitionStateUpdates::Delta { by_substate } => {
-                        for (substate_key, substate_update) in by_substate {
-                            updates
-                                .entry(node_id.clone())
-                                .or_default()
-                                .entry(partition_num.clone())
-                                .or_default()
-                                .insert(substate_key.clone(), substate_update.clone());
-                        }
-                    }
-                    PartitionStateUpdates::Batch(BatchPartitionStateUpdate::Reset {
-                        new_substate_values,
-                    }) => {
-                        for (substate_key, substate_value) in new_substate_values {
-                            updates
-                                .entry(node_id.clone())
-                                .or_default()
-                                .entry(partition_num.clone())
-                                .or_default()
-                                .insert(
-                                    substate_key.clone(),
-                                    DatabaseUpdate::Set(substate_value.clone()),
-                                );
-                        }
-                    }
-                }
-            }
-        }
-        updates
-    }
-
-    /// Note - there is a better display of these on the receipt, which uses the schemas
-    /// to display clear details
-    pub fn state_updates_string(&self) -> String {
-        let mut buffer = String::new();
-        for (node_id, x) in &self.state_updates() {
-            buffer.push_str(&format!("\n{:?}, {:?}\n", node_id, node_id.entity_type()));
-            for (partition_num, y) in x {
-                buffer.push_str(&format!("    {:?}\n", partition_num));
-                for (substate_key, substate_update) in y {
-                    buffer.push_str(&format!(
-                        "        {}\n",
-                        match substate_key {
-                            SubstateKey::Field(x) => format!("Field: {}", x),
-                            SubstateKey::Map(x) =>
-                                format!("Map: {:?}", scrypto_decode::<ScryptoValue>(&x).unwrap()),
-                            SubstateKey::Sorted(x) => format!(
-                                "Sorted: {:?}, {:?}",
-                                x.0,
-                                scrypto_decode::<ScryptoValue>(&x.1).unwrap()
-                            ),
-                        },
-                    ));
-                    buffer.push_str(&format!(
-                        "        {}\n",
-                        match substate_update {
-                            DatabaseUpdate::Set(x) =>
-                                format!("Set: {:?}", scrypto_decode::<ScryptoValue>(&x).unwrap()),
-                            DatabaseUpdate::Delete => format!("Delete"),
-                        }
-                    ));
-                }
-            }
-        }
-        buffer
     }
 }
 
@@ -1020,9 +942,9 @@ impl<'a> TransactionReceiptDisplayContextBuilder<'a> {
 impl<'a> ContextualDisplay<TransactionReceiptDisplayContext<'a>> for TransactionReceipt {
     type Error = fmt::Error;
 
-    fn contextual_format<F: fmt::Write>(
+    fn contextual_format(
         &self,
-        f: &mut F,
+        f: &mut fmt::Formatter,
         context: &TransactionReceiptDisplayContext<'a>,
     ) -> Result<(), Self::Error> {
         let result = &self.result;
@@ -1038,37 +960,37 @@ impl<'a> ContextualDisplay<TransactionReceiptDisplayContext<'a>> for Transaction
         context.format_top_level_title_with_detail(
             f,
             "Transaction Cost",
-            format!("{} XRD", self.fee_summary.total_cost()),
+            format!("{} RORK", self.fee_summary.total_cost()),
         )?;
         write!(
             f,
-            "\n├─ {} {} XRD, {} execution cost units",
+            "\n├─ {} {} RORK, {} execution cost units",
             context.display_title("Network execution:"),
             self.fee_summary.total_execution_cost_in_xrd,
             self.fee_summary.total_execution_cost_units_consumed,
         )?;
         write!(
             f,
-            "\n├─ {} {} XRD, {} finalization cost units",
+            "\n├─ {} {} RORK, {} finalization cost units",
             context.display_title("Network finalization:"),
             self.fee_summary.total_finalization_cost_in_xrd,
             self.fee_summary.total_finalization_cost_units_consumed,
         )?;
         write!(
             f,
-            "\n├─ {} {} XRD",
+            "\n├─ {} {} RORK",
             context.display_title("Tip:"),
             self.fee_summary.total_tipping_cost_in_xrd
         )?;
         write!(
             f,
-            "\n├─ {} {} XRD",
+            "\n├─ {} {} RORK",
             context.display_title("Network Storage:"),
             self.fee_summary.total_storage_cost_in_xrd
         )?;
         write!(
             f,
-            "\n└─ {} {} XRD",
+            "\n└─ {} {} RORK",
             context.display_title("Royalties:"),
             self.fee_summary.total_royalty_cost_in_xrd
         )?;
@@ -1195,9 +1117,9 @@ impl<'a, 'b> ContextualDisplay<TransactionReceiptDisplayContext<'a>>
 {
     type Error = fmt::Error;
 
-    fn contextual_format<F: fmt::Write>(
+    fn contextual_format(
         &self,
-        f: &mut F,
+        f: &mut fmt::Formatter,
         context: &TransactionReceiptDisplayContext<'a>,
     ) -> Result<(), Self::Error> {
         let state_updates = self.0;
