@@ -32,23 +32,23 @@ concurrency:
 
 jobs:
 
-  phylum-analyze:
-    if: ${{ github.event.pull_request }}
-    uses: radixdlt/public-iac-resuable-artifacts/.github/workflows/phylum-analyze.yml@main
-    permissions:
-      id-token: write
-      pull-requests: write
-      contents: read
-      deployments: write
-    secrets:
-      phylum_api_key: ${{ secrets.PHYLUM_API_KEY }}
-    with:
-      phylum_pr_number: ${{ github.event.number }}
-      phylum_pr_name: ${{ github.head_ref }}
-      phylum_group_name: Protocol
-      phylum_project_id: 851c8804-e9f6-423c-be8e-c529d22f4abd
-      github_repository: ${{ github.repository }}
-      add_report_comment_to_pull_request: true
+  # phylum-analyze:
+  #   if: ${{ github.event.pull_request }}
+  #   uses: radixdlt/public-iac-resuable-artifacts/.github/workflows/phylum-analyze.yml@main
+  #   permissions:
+  #     id-token: write
+  #     pull-requests: write
+  #     contents: read
+  #     deployments: write
+  #   secrets:
+  #     phylum_api_key: ${{ secrets.PHYLUM_API_KEY }}
+  #   with:
+  #     phylum_pr_number: ${{ github.event.number }}
+  #     phylum_pr_name: ${{ github.head_ref }}
+  #     phylum_group_name: Protocol
+  #     phylum_project_id: 851c8804-e9f6-423c-be8e-c529d22f4abd
+  #     github_repository: ${{ github.repository }}
+  #     add_report_comment_to_pull_request: true
 
   check-code-format:
     name: Check code format
@@ -179,10 +179,7 @@ jobs:
 
   radix-engine-build:
     name: Run Radix Engine build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16-cores-selfhosted]
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -208,7 +205,7 @@ jobs:
 
   radix-engine-test:
     name: Run Radix Engine tests
-    runs-on: ubuntu-16-cores-selfhosted
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -250,7 +247,7 @@ jobs:
     # - overflow-checks
     # which are false for release variant
     name: Run Radix Engine tests (release)
-    runs-on: ubuntu-16-cores-selfhosted
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -273,7 +270,7 @@ jobs:
 
   radix-engine-no-std:
     name: Run Radix Engine tests (no_std)
-    runs-on: ubuntu-16-cores-selfhosted
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -340,10 +337,7 @@ jobs:
 
   radix-clis:
     name: Run CLI tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16-cores-selfhosted, windows-16-cores-selfhosted]
+    runs-on: ubuntu-latest
     steps:
       - name: Enable symlinks for Windows
         if: runner.os == 'Windows'
@@ -375,10 +369,7 @@ jobs:
 
   radix-clis-scrypto:
     name: Run CLI tests (scrypto)
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16-cores-selfhosted, windows-16-cores-selfhosted, macos-latest]
+    runs-on: ubuntu-latest
     steps:
       - name: Enable symlinks for Windows
         if: runner.os == 'Windows'
@@ -398,7 +389,7 @@ jobs:
 
   radix-clis-scrypto-coverage:
     name: Run CLI tests (scrypto coverage)
-    runs-on: ubuntu-16-cores-selfhosted
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -436,10 +427,7 @@ jobs:
 
   cargo-check:
     name: Run cargo check
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16-cores-selfhosted]
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -449,10 +437,7 @@ jobs:
 
   cargo-check-post-run-db-check:
     name: Run cargo check with post run db check
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16-cores-selfhosted]
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -462,7 +447,7 @@ jobs:
 
   determinism-test:
     name: Run determinism test
-    runs-on: ubuntu-16-cores-selfhosted
+    runs-on: ubuntu-latest
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Cargo Check
