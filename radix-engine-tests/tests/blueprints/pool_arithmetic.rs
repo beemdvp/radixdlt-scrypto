@@ -19,7 +19,8 @@ fn one_resource_pool_redemption_value_calculation_does_not_lose_precision_at_div
 ) -> Result<(), RuntimeError> {
     // Arrange
     let env = &mut TestEnvironment::new();
-    let mut pool = OneResourcePool::instantiate(RORK, OwnerRole::None, rule!(allow_all), None, env)?;
+    let mut pool =
+        OneResourcePool::instantiate(RORK, OwnerRole::None, rule!(allow_all), None, env)?;
 
     let bucket = env
         .with_auth_module_disabled(|env| ResourceManager(RORK).mint_fungible(dec!(100_000), env))?;
@@ -96,7 +97,8 @@ fn one_resource_pool_redemption_returning_zero_fails_with_error() -> Result<(), 
 fn one_resource_pool_contributions_must_return_pool_units() -> Result<(), RuntimeError> {
     // Arrange
     let env = &mut TestEnvironment::new();
-    let mut pool = OneResourcePool::instantiate(RORK, OwnerRole::None, rule!(allow_all), None, env)?;
+    let mut pool =
+        OneResourcePool::instantiate(RORK, OwnerRole::None, rule!(allow_all), None, env)?;
 
     let contribution_bucket = env.with_auth_module_disabled(|env| {
         ResourceManager(RORK).mint_fungible(dec!(100_000_000_000), env)
@@ -125,7 +127,8 @@ fn one_resource_pool_contributing_to_pool_with_concentrated_pool_units_should_er
 ) -> Result<(), RuntimeError> {
     // Arrange
     let env = &mut TestEnvironment::new();
-    let mut pool = OneResourcePool::instantiate(RORK, OwnerRole::None, rule!(allow_all), None, env)?;
+    let mut pool =
+        OneResourcePool::instantiate(RORK, OwnerRole::None, rule!(allow_all), None, env)?;
 
     let xrd_bucket = env.with_auth_module_disabled(|env| {
         ResourceManager(RORK).mint_fungible(dec!(100_000_000_000), env)
