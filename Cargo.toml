@@ -147,4 +147,5 @@ panic = "unwind"
 # Optimize for speed for test profile to speed up the tests
 [profile.test]
 opt-level = 1
+debug = false
 
