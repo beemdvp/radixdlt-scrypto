@@ -179,7 +179,7 @@ jobs:
 
   radix-engine-build:
     name: Run Radix Engine build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -205,7 +205,7 @@ jobs:
 
   radix-engine-test:
     name: Run Radix Engine tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -247,7 +247,7 @@ jobs:
     # - overflow-checks
     # which are false for release variant
     name: Run Radix Engine tests (release)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
@@ -270,7 +270,7 @@ jobs:
 
   radix-engine-no-std:
     name: Run Radix Engine tests (no_std)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: RDXWorks-actions/checkout@main
       - name: Setup environment
