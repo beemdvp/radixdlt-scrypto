@@ -2,8 +2,8 @@ Name: radiswap
 
 == SUMMARY HASHES ==
 These Babylon hashes should NEVER change, else they will cause divergence when run historically.
-State changes: 9e194f2db1b3705d (should never change)
-Events       : a1a6f8d434cb1274 (should never change)
+State changes: 074c1834add51ffa (should never change)
+Events       : 2545f1adf590fe63 (should never change)
 
 == INTERESTING ADDRESSES ==
 - radiswap_dapp_definition_account: account_sim129uea6ms5wjstpze559am5ddw293cr2nxeqrha4ae4536dlw5x8whd

@@ -2,8 +2,8 @@ Name: radiswap_v2
 
 == SUMMARY HASHES ==
 These Dugong hashes are permitted to change only until the scenario is deployed to a permanent network, else it can cause divergence.
-State changes: f7b7d9b661ceec2c (allowed to change if not deployed to any network)
-Events       : 38589a1d2f911ed4 (allowed to change if not deployed to any network)
+State changes: 213fe0beb2c162ba (allowed to change if not deployed to any network)
+Events       : ecc636614e67c07a (allowed to change if not deployed to any network)
 
 == INTERESTING ADDRESSES ==
 - radiswap_dapp_definition_account: account_sim1c9encd7rpek568jyxappxn0y2qyhrdxg2c072evtjcvrpvq5uee8m0

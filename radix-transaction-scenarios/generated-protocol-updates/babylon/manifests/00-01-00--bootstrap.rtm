@@ -200,7 +200,7 @@ CREATE_FUNGIBLE_RESOURCE_WITH_INITIAL_SUPPLY
             "name" => Tuple(
                 Enum<1u8>(
                     Enum<0u8>(
-                        "Radix"
+                        "RORK"
                     )
                 ),
                 true
@@ -208,7 +208,7 @@ CREATE_FUNGIBLE_RESOURCE_WITH_INITIAL_SUPPLY
             "description" => Tuple(
                 Enum<1u8>(
                     Enum<0u8>(
-                        "The Radix Public Network's native token, used to pay the network's required transaction fees and to secure the network through staking to its validator nodes."
+                        "The Rork Public Network's native token, used to pay the network's required transaction fees and to secure the network through staking to its validator nodes."
                     )
                 ),
                 true

@@ -2,8 +2,8 @@ Name: radiswap
 
 == SUMMARY HASHES ==
 These Anemone hashes should NEVER change, else they will cause divergence when run historically.
-State changes: 00228a7578419040 (should never change)
-Events       : a9dc72ab9f4754cb (should never change)
+State changes: c343ca346e4f9724 (should never change)
+Events       : ca9586ed1e595267 (should never change)
 
 == INTERESTING ADDRESSES ==
 - radiswap_dapp_definition_account: account_sim129uea6ms5wjstpze559am5ddw293cr2nxeqrha4ae4536dlw5x8whd

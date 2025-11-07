@@ -2,8 +2,8 @@ Name: radiswap
 
 == SUMMARY HASHES ==
 These Cuttlefish (Part 2) hashes should NEVER change, else they will cause divergence when run historically.
-State changes: 87d15699fcc8b850 (should never change)
-Events       : f551c456fde9a0cf (should never change)
+State changes: bbfd780ee6f4ce7c (should never change)
+Events       : 44c63abebe7f7df0 (should never change)
 
 == INTERESTING ADDRESSES ==
 - radiswap_dapp_definition_account: account_sim129uea6ms5wjstpze559am5ddw293cr2nxeqrha4ae4536dlw5x8whd
