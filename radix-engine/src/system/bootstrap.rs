@@ -428,8 +428,8 @@ pub fn create_system_bootstrap_transaction(
                 metadata: metadata! {
                     init {
                         "symbol" => "RORK".to_owned(), locked;
-                        "name" => "Radix".to_owned(), locked;
-                        "description" => "The Radix Public Network's native token, used to pay the network's required transaction fees and to secure the network through staking to its validator nodes.".to_owned(), locked;
+                        "name" => "RORK".to_owned(), locked;
+                        "description" => "The Rork Public Network's native token, used to pay the network's required transaction fees and to secure the network through staking to its validator nodes.".to_owned(), locked;
                         "icon_url" => UncheckedUrl::of("https://assets.radixdlt.com/icons/icon-xrd-32x32.png".to_owned()), locked;
                         "info_url" => UncheckedUrl::of("https://tokens.radixdlt.com".to_owned()), locked;
                         "tags" => Vec::<String>::new(), locked;

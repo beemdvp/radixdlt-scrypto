@@ -1,19 +1,19 @@
-Total Cost (RORK)                                                           ,            1.83411369961,    100.0%
-- Execution Cost (RORK)                                                     ,               0.66120545,     36.1%
-- Finalization Cost (RORK)                                                  ,                0.1880488,     10.3%
-- Storage Cost (RORK)                                                       ,            0.98485944961,     53.7%
-- Tipping Cost (RORK)                                                       ,                        0,      0.0%
-- Royalty Cost (RORK)                                                       ,                        0,      0.0%
-Execution Cost Breakdown                                                   ,                 13224109,    100.0%
+Total Cost (RORK)                                                          ,            1.83584421335,    100.0%
+- Execution Cost (RORK)                                                    ,               0.66121925,     36.0%
+- Finalization Cost (RORK)                                                 ,                0.1880489,     10.2%
+- Storage Cost (RORK)                                                      ,            0.98657606335,     53.7%
+- Tipping Cost (RORK)                                                      ,                        0,      0.0%
+- Royalty Cost (RORK)                                                      ,                        0,      0.0%
+Execution Cost Breakdown                                                   ,                 13224385,    100.0%
 - AfterInvoke                                                              ,                     1212,      0.0%
 - AllocateNodeId                                                           ,                     7081,      0.1%
-- BeforeInvoke                                                             ,                    11868,      0.1%
+- BeforeInvoke                                                             ,                    11880,      0.1%
 - CheckIntentValidity                                                      ,                   160000,      1.2%
 - CheckReference                                                           ,                   320115,      2.4%
 - CloseSubstate                                                            ,                   140481,      1.1%
 - CreateNode                                                               ,                    62852,      0.5%
 - DropNode                                                                 ,                   113003,      0.9%
-- EmitEvent                                                                ,                    19836,      0.1%
+- EmitEvent                                                                ,                    19848,      0.2%
 - GetOwnedNodes                                                            ,                     1000,      0.0%
 - LockFee                                                                  ,                      500,      0.0%
 - MarkSubstateAsTransient                                                  ,                      165,      0.0%
@@ -47,15 +47,15 @@ Execution Cost Breakdown                                                   ,    
 - SetCallFrameData                                                         ,                      606,      0.0%
 - SetSubstate                                                              ,                      151,      0.0%
 - SwitchStack                                                              ,                     1000,      0.0%
-- ValidateTxPayload                                                        ,                   141080,      1.1%
+- ValidateTxPayload                                                        ,                   141320,      1.1%
 - VerifyTxSignatures                                                       ,                    14000,      0.1%
-- WriteSubstate                                                            ,                    46444,      0.4%
-Finalization Cost Breakdown                                                ,                  3760976,    100.0%
-- CommitEvents                                                             ,                   160467,      4.3%
+- WriteSubstate                                                            ,                    46456,      0.4%
+Finalization Cost Breakdown                                                ,                  3760978,    100.0%
+- CommitEvents                                                             ,                   160468,      4.3%
 - CommitIntentStatus                                                       ,                   100000,      2.7%
 - CommitLogs                                                               ,                        0,      0.0%
 - CommitStateUpdates::GlobalFungibleResourceManager                        ,                  1000152,     26.6%
-- CommitStateUpdates::GlobalGenericComponent                               ,                  1100153,     29.3%
+- CommitStateUpdates::GlobalGenericComponent                               ,                  1100154,     29.3%
 - CommitStateUpdates::GlobalPreallocatedEd25519Account                     ,                   100050,      2.7%
 - CommitStateUpdates::GlobalTwoResourcePool                                ,                  1000134,     26.6%
 - CommitStateUpdates::InternalFungibleVault                                ,                   100009,      2.7%

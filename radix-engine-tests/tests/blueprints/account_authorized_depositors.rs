@@ -826,7 +826,9 @@ fn authorized_depositor_badge_is_ignored_when_deposit_is_permitted_without_it() 
                     method_name,
                     manifest_args!(
                         bucket,
-                        Option::<ResourceOrNonFungible>::Some(ResourceOrNonFungible::Resource(RORK))
+                        Option::<ResourceOrNonFungible>::Some(ResourceOrNonFungible::Resource(
+                            RORK
+                        ))
                     ),
                 )
             })
@@ -868,7 +870,9 @@ fn authorized_depositor_badge_is_checked_when_deposit_cant_go_without_it() {
                     method_name,
                     manifest_args!(
                         bucket,
-                        Option::<ResourceOrNonFungible>::Some(ResourceOrNonFungible::Resource(RORK))
+                        Option::<ResourceOrNonFungible>::Some(ResourceOrNonFungible::Resource(
+                            RORK
+                        ))
                     ),
                 )
             })
@@ -924,7 +928,9 @@ fn authorized_depositor_badge_permits_caller_to_deposit() {
                     method_name,
                     manifest_args!(
                         bucket,
-                        Option::<ResourceOrNonFungible>::Some(ResourceOrNonFungible::Resource(RORK))
+                        Option::<ResourceOrNonFungible>::Some(ResourceOrNonFungible::Resource(
+                            RORK
+                        ))
                     ),
                 )
             })

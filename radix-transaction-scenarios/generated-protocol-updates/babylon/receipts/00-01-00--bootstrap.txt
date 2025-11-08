@@ -207,13 +207,13 @@ STATE UPDATES: 34 entities
     ├─ Set: "name"
        Value: LOCKED MetadataEntryEntryPayload::V1(
          GenericMetadataValue::String(
-           "Radix",
+           "RORK",
          ),
        )
     ├─ Set: "description"
        Value: LOCKED MetadataEntryEntryPayload::V1(
          GenericMetadataValue::String(
-           "The Radix Public Network's native token, used to pay the network's required transaction fees and to secure the network through staking to its validator nodes.",
+           "The Rork Public Network's native token, used to pay the network's required transaction fees and to secure the network through staking to its validator nodes.",
          ),
        )
     ├─ Set: "symbol"
